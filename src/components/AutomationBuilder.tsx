@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -67,6 +68,17 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
 
   const createAutomationRule = async () => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to create automation rules",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('automation_rules')
         .insert({
@@ -75,7 +87,8 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
           triggers: newRule.triggers,
           conditions: newRule.conditions,
           actions: newRule.actions,
-          enabled: true
+          enabled: true,
+          user_id: user.id
         });
 
       if (error) throw error;
@@ -124,13 +137,18 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
         <Button
           onClick={() => onClick(item.id)}
           className={`
-            w-14 h-14 rounded-full p-0 border-2 transition-all duration-300 hover:scale-105
-            bg-${item.color}-500/10 border-${item.color}-500/30 hover:bg-${item.color}-500/20
+            w-14 h-14 rounded-full p-0 border-2 transition-all duration-300 hover:scale-105 transform hover:shadow-lg
+            ${isDarkMode 
+              ? `bg-${item.color}-500/10 border-${item.color}-500/30 hover:bg-${item.color}-500/20 hover:border-${item.color}-400/50`
+              : `bg-${item.color}-100 border-${item.color}-300 hover:bg-${item.color}-200 hover:border-${item.color}-400`
+            }
           `}
         >
-          <Icon className={`h-5 w-5 text-${item.color}-400`} />
+          <Icon className={`h-5 w-5 ${isDarkMode ? `text-${item.color}-400` : `text-${item.color}-600`}`} />
         </Button>
-        <span className="text-xs font-medium text-center max-w-16 leading-tight">
+        <span className={`text-xs font-medium text-center max-w-16 leading-tight ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
           {item.name}
         </span>
       </div>
@@ -138,12 +156,16 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Quick Rule Templates */}
-      <Card className={`p-4 border ${
-        isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-gray-200/50'
-      }`}>
-        <h4 className="font-semibold mb-3">Quick Templates</h4>
+      <Card className={`p-4 border transition-all duration-300 ${
+        isDarkMode 
+          ? 'bg-white/5 border-white/10 hover:bg-white/8' 
+          : 'bg-white/80 border-gray-200/50 hover:bg-white/90'
+      } backdrop-blur-md rounded-2xl shadow-lg`}>
+        <h4 className={`font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          Quick Templates
+        </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[
             { name: 'Car Connect', desc: 'Auto-connect when car detected', triggers: ['bluetooth'], actions: ['connect', 'audio'] },
@@ -153,13 +175,17 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
             <Button
               key={index}
               variant="outline"
-              className={`p-3 h-auto text-left ${
-                isDarkMode ? 'border-white/20 hover:bg-white/10' : 'border-gray-300 hover:bg-gray-50'
+              className={`p-3 h-auto text-left transition-all duration-300 hover:scale-105 transform rounded-xl ${
+                isDarkMode 
+                  ? 'border-white/20 hover:bg-white/10 hover:border-white/30' 
+                  : 'border-gray-300 hover:bg-gray-50 hover:border-gray-400'
               }`}
               onClick={() => console.log(`Create template: ${template.name}`)}
             >
               <div>
-                <p className="font-medium text-sm">{template.name}</p>
+                <p className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {template.name}
+                </p>
                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   {template.desc}
                 </p>
@@ -170,15 +196,19 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
       </Card>
 
       {/* Create New Rule */}
-      <Card className={`p-4 border ${
-        isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-gray-200/50'
-      }`}>
+      <Card className={`p-4 border transition-all duration-300 ${
+        isDarkMode 
+          ? 'bg-white/5 border-white/10 hover:bg-white/8' 
+          : 'bg-white/80 border-gray-200/50 hover:bg-white/90'
+      } backdrop-blur-md rounded-2xl shadow-lg`}>
         <div className="flex items-center justify-between mb-4">
-          <h4 className="font-semibold">Create Automation Rule</h4>
+          <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            Create Automation Rule
+          </h4>
           <Button
             onClick={() => setIsCreating(!isCreating)}
             size="sm"
-            className="rounded-full"
+            className="rounded-full transition-all duration-300 hover:scale-105 transform"
           >
             <Plus className="h-4 w-4" />
             {isCreating ? 'Cancel' : 'New Rule'}
@@ -186,33 +216,47 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
         </div>
 
         {isCreating && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-in">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="ruleName">Rule Name</Label>
+                <Label htmlFor="ruleName" className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                  Rule Name
+                </Label>
                 <Input
                   id="ruleName"
                   value={newRule.name}
                   onChange={(e) => setNewRule(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g., Car Connect"
-                  className="mt-1"
+                  className={`mt-1 transition-all duration-300 ${
+                    isDarkMode 
+                      ? 'bg-white/10 border-white/20 text-white placeholder:text-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 />
               </div>
               <div>
-                <Label htmlFor="ruleDesc">Description</Label>
+                <Label htmlFor="ruleDesc" className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                  Description
+                </Label>
                 <Input
                   id="ruleDesc"
                   value={newRule.description}
                   onChange={(e) => setNewRule(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="What does this rule do?"
-                  className="mt-1"
+                  className={`mt-1 transition-all duration-300 ${
+                    isDarkMode 
+                      ? 'bg-white/10 border-white/20 text-white placeholder:text-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 />
               </div>
             </div>
 
             {/* Triggers */}
             <div>
-              <Label>When (Triggers)</Label>
+              <Label className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                When (Triggers)
+              </Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2 justify-items-center">
                 {triggerTypes.map(trigger => (
                   <CircularTriggerAction
@@ -227,7 +271,9 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
 
             {/* Actions */}
             <div>
-              <Label>Then (Actions)</Label>
+              <Label className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                Then (Actions)
+              </Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2 justify-items-center">
                 {actionTypes.map(action => (
                   <CircularTriggerAction
@@ -240,7 +286,7 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
               </div>
             </div>
 
-            <Button onClick={createAutomationRule} className="w-full">
+            <Button onClick={createAutomationRule} className="w-full transition-all duration-300 hover:scale-105 transform">
               <Zap className="h-4 w-4 mr-2" />
               Create Rule
             </Button>
@@ -250,15 +296,21 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
 
       {/* Existing Rules */}
       <div className="space-y-3">
-        <h4 className="font-semibold">Your Automation Rules</h4>
+        <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          Your Automation Rules
+        </h4>
         {automationRules.map(rule => (
-          <Card key={rule.id} className={`p-4 border ${
-            isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white/80 border-gray-200/50'
-          }`}>
+          <Card key={rule.id} className={`p-4 border transition-all duration-300 hover:scale-102 transform ${
+            isDarkMode 
+              ? 'bg-white/5 border-white/10 hover:bg-white/8' 
+              : 'bg-white/80 border-gray-200/50 hover:bg-white/90'
+          } backdrop-blur-md rounded-2xl shadow-lg`}>
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
-                  <h5 className="font-medium">{rule.name}</h5>
+                  <h5 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {rule.name}
+                  </h5>
                   <Badge variant={rule.enabled ? "default" : "secondary"} className="text-xs">
                     {rule.enabled ? 'Active' : 'Inactive'}
                   </Badge>
@@ -278,21 +330,21 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({
                   size="sm"
                   variant="ghost"
                   onClick={() => toggleRule(rule.id, rule.enabled)}
-                  className="rounded-full"
+                  className="rounded-full transition-all duration-300 hover:scale-110 transform"
                 >
                   {rule.enabled ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="rounded-full"
+                  className="rounded-full transition-all duration-300 hover:scale-110 transform"
                 >
                   <Settings className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="rounded-full text-red-400 hover:text-red-300"
+                  className="rounded-full text-red-400 hover:text-red-300 transition-all duration-300 hover:scale-110 transform"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

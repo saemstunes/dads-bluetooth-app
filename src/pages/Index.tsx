@@ -1,9 +1,9 @@
 
 import React from 'react';
-import JarvisHub from '../components/JarvisHub';
+import WambuguHub from '../components/JarvisHub';
 
 const Index = () => {
-  return <JarvisHub />;
+  return <WambuguHub />;
 };
 
 export default Index;

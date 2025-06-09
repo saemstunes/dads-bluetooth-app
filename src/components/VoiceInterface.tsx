@@ -66,13 +66,18 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ isDarkMode }) => {
     setIsProcessing(true);
     
     try {
-      // Log voice command to database
-      await supabase.from('voice_commands').insert({
-        command_text: command,
-        intent_detected: detectIntent(command),
-        confidence_score: 0.9,
-        language_code: 'en-US'
-      });
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Log voice command to database
+        await supabase.from('voice_commands').insert({
+          command_text: command,
+          intent_detected: detectIntent(command),
+          confidence_score: 0.9,
+          language_code: 'en-US',
+          user_id: user.id
+        });
+      }
 
       // Process command
       const response = await processCommand(command);
@@ -100,6 +105,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ isDarkMode }) => {
     if (lowerCommand.includes('play') || lowerCommand.includes('music')) return 'audio_control';
     if (lowerCommand.includes('automation') || lowerCommand.includes('rule')) return 'automation_control';
     if (lowerCommand.includes('volume')) return 'volume_control';
+    if (lowerCommand.includes('car') || lowerCommand.includes('drive')) return 'car_mode';
     return 'general_query';
   };
 
@@ -110,13 +116,15 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ isDarkMode }) => {
       case 'device_connect':
         return 'Scanning for nearby devices...';
       case 'audio_control':
-        return 'Audio control activated';
+        return 'Audio control activated. Playing your music now.';
       case 'automation_control':
-        return 'Automation rules checked';
+        return 'Automation rules checked and updated.';
       case 'volume_control':
-        return 'Volume adjusted';
+        return 'Volume adjusted to your preference.';
+      case 'car_mode':
+        return 'Car mode activated. Safe driving!';
       default:
-        return 'Command received and processed';
+        return 'Command received and processed successfully.';
     }
   };
 
@@ -135,19 +143,25 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ isDarkMode }) => {
   };
 
   return (
-    <div className="text-center space-y-6">
+    <div className="text-center space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Voice Command Center</h2>
+        <h2 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          Voice Command Center
+        </h2>
         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          Press and hold to speak with JARVIS
+          Press and hold to speak with WAMBUGU
         </p>
       </div>
 
       {/* Circular Waveform Visualization */}
       <div className="flex justify-center">
         <div className="relative w-48 h-48">
-          <div className="absolute inset-0 rounded-full border-2 border-blue-500/30"></div>
-          <div className="absolute inset-4 rounded-full border border-purple-500/20"></div>
+          <div className={`absolute inset-0 rounded-full border-2 transition-all duration-500 ${
+            isListening ? 'border-blue-500/50 animate-pulse' : 'border-blue-500/30'
+          }`}></div>
+          <div className={`absolute inset-4 rounded-full border transition-all duration-500 ${
+            isListening ? 'border-purple-500/30 animate-pulse' : 'border-purple-500/20'
+          }`}></div>
           
           {/* Waveform bars arranged in circle */}
           <div className="absolute inset-0 flex items-center justify-center">
@@ -181,14 +195,14 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ isDarkMode }) => {
               onTouchStart={toggleListening}
               onTouchEnd={() => isListening && toggleListening()}
               className={`
-                w-20 h-20 rounded-full transition-all duration-300 transform hover:scale-105 
+                w-20 h-20 rounded-full transition-all duration-300 transform hover:scale-105 shadow-2xl
                 ${isListening
-                  ? 'bg-red-500 shadow-lg shadow-red-500/50 animate-pulse'
-                  : 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/50'
+                  ? 'bg-red-500 shadow-lg shadow-red-500/50 animate-pulse hover:bg-red-600'
+                  : 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/50 hover:shadow-blue-500/70'
                 }
               `}
             >
-              {isListening ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
+              {isListening ? <MicOff className="h-8 w-8 text-white" /> : <Mic className="h-8 w-8 text-white" />}
             </Button>
           </div>
         </div>
@@ -197,22 +211,30 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ isDarkMode }) => {
       {/* Status Display */}
       <div className="space-y-3">
         {isListening && (
-          <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/50">
+          <Badge variant="outline" className={`${
+            isDarkMode 
+              ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' 
+              : 'bg-blue-100 text-blue-800 border-blue-300'
+          } animate-pulse backdrop-blur-md`}>
             <Mic className="h-3 w-3 mr-1" />
             Listening...
           </Badge>
         )}
 
         {isProcessing && (
-          <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">
+          <Badge variant="outline" className={`${
+            isDarkMode 
+              ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' 
+              : 'bg-yellow-100 text-yellow-800 border-yellow-300'
+          } animate-pulse backdrop-blur-md`}>
             Processing...
           </Badge>
         )}
 
         {voiceCommand && (
-          <div className={`p-3 rounded-lg border max-w-md mx-auto ${
+          <div className={`p-3 rounded-xl border max-w-md mx-auto transition-all duration-300 hover:scale-102 transform ${
             isDarkMode 
-              ? 'bg-blue-500/10 border-blue-500/30' 
+              ? 'bg-blue-500/10 border-blue-500/30 backdrop-blur-md' 
               : 'bg-blue-50 border-blue-200'
           }`}>
             <p className={`text-sm font-medium ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
@@ -222,9 +244,9 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ isDarkMode }) => {
         )}
 
         {response && (
-          <div className={`p-3 rounded-lg border max-w-md mx-auto ${
+          <div className={`p-3 rounded-xl border max-w-md mx-auto transition-all duration-300 hover:scale-102 transform ${
             isDarkMode 
-              ? 'bg-green-500/10 border-green-500/30' 
+              ? 'bg-green-500/10 border-green-500/30 backdrop-blur-md' 
               : 'bg-green-50 border-green-200'
           }`}>
             <div className="flex items-center space-x-2">
@@ -243,17 +265,17 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ isDarkMode }) => {
           'Connect car',
           'Play music',
           'Check devices',
-          'Home mode'
+          'Car mode'
         ].map((command, index) => (
           <Button
             key={index}
             variant="outline"
             size="sm"
             onClick={() => handleVoiceCommand(command)}
-            className={`text-xs h-8 ${
+            className={`text-xs h-8 transition-all duration-300 hover:scale-105 transform rounded-full ${
               isDarkMode 
-                ? 'border-white/20 hover:bg-white/10' 
-                : 'border-gray-300 hover:bg-gray-50'
+                ? 'border-white/20 hover:bg-white/10 hover:border-white/30 text-gray-300' 
+                : 'border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-700'
             }`}
           >
             {command}
