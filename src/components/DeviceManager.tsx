@@ -1,234 +1,245 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Switch } from '@/components/ui/switch';
-import { Bluetooth, Volume2, ArrowUp } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Bluetooth, 
+  Wifi, 
+  Car, 
+  Headphones, 
+  Smartphone, 
+  Signal, 
+  Battery,
+  Plus,
+  Settings
+} from 'lucide-react';
 
 interface Device {
-  id: number;
-  name: string;
-  type: string;
-  status: string;
-  signal: number;
+  id: string;
+  device_name: string;
+  device_type: string;
+  is_trusted: boolean;
+  signal_strength?: number;
+  battery_level?: number;
+  last_connected_at?: string;
 }
 
 interface DeviceManagerProps {
-  devices: Device[];
-  onDeviceUpdate: (devices: Device[]) => void;
+  connectedDevices: Device[];
+  isDarkMode: boolean;
+  compact?: boolean;
 }
 
-const DeviceManager: React.FC<DeviceManagerProps> = ({ devices, onDeviceUpdate }) => {
-  const [scanning, setScanning] = useState(false);
+const DeviceManager: React.FC<DeviceManagerProps> = ({ 
+  connectedDevices, 
+  isDarkMode, 
+  compact = false 
+}) => {
+  const [isScanning, setIsScanning] = useState(false);
+  const { toast } = useToast();
 
-  const toggleDeviceConnection = (deviceId: number) => {
-    const updatedDevices = devices.map(device => {
-      if (device.id === deviceId) {
-        return {
-          ...device,
-          status: device.status === 'connected' ? 'disconnected' : 'connected',
-          signal: device.status === 'connected' ? 0 : Math.floor(Math.random() * 40) + 60
-        };
-      }
-      return device;
-    });
-    onDeviceUpdate(updatedDevices);
+  const getDeviceIcon = (deviceType: string) => {
+    switch (deviceType) {
+      case 'bluetooth':
+        return Headphones;
+      case 'wifi_direct':
+        return Wifi;
+      case 'aux':
+        return Car;
+      default:
+        return Smartphone;
+    }
   };
 
-  const scanForDevices = () => {
-    setScanning(true);
+  const getDeviceColor = (deviceType: string) => {
+    switch (deviceType) {
+      case 'bluetooth':
+        return 'blue';
+      case 'wifi_direct':
+        return 'green';
+      case 'aux':
+        return 'purple';
+      default:
+        return 'gray';
+    }
+  };
+
+  const handleDeviceConnection = async (device: Device) => {
+    try {
+      const { error } = await supabase
+        .from('device_connections')
+        .update({ 
+          last_connected_at: new Date().toISOString(),
+          connection_count: device.connection_count + 1 
+        })
+        .eq('id', device.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Device Connected",
+        description: `Successfully connected to ${device.device_name}`,
+      });
+
+    } catch (error) {
+      console.error('Error connecting device:', error);
+      toast({
+        title: "Connection Failed",
+        description: "Could not connect to device",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startDeviceScan = async () => {
+    setIsScanning(true);
+    
+    // Simulate device scanning
     setTimeout(() => {
-      const newDevice = {
-        id: devices.length + 1,
-        name: 'AirPods Pro',
-        type: 'bluetooth',
-        status: 'discovered',
-        signal: 78
-      };
-      onDeviceUpdate([...devices, newDevice]);
-      setScanning(false);
+      setIsScanning(false);
+      toast({
+        title: "Scan Complete",
+        description: "Found 2 new devices nearby",
+      });
     }, 3000);
   };
 
-  const getDeviceIcon = (type: string) => {
-    switch (type) {
-      case 'bluetooth':
-        return <Bluetooth className="h-5 w-5" />;
-      case 'wifi':
-        return <ArrowUp className="h-5 w-5" />;
-      default:
-        return <Volume2 className="h-5 w-5" />;
-    }
+  const CircularDeviceButton = ({ device }: { device: Device }) => {
+    const Icon = getDeviceIcon(device.device_type);
+    const color = getDeviceColor(device.device_type);
+    
+    return (
+      <div className="flex flex-col items-center space-y-2">
+        <Button
+          onClick={() => handleDeviceConnection(device)}
+          className={`
+            w-14 h-14 rounded-full p-0 border-2 transition-all duration-300 hover:scale-105
+            ${device.is_trusted 
+              ? `bg-${color}-500 border-${color}-400 shadow-${color}-500/50` 
+              : `bg-${color}-500/10 border-${color}-500/30 hover:bg-${color}-500/20`
+            }
+          `}
+        >
+          <Icon className={`h-5 w-5 ${device.is_trusted ? 'text-white' : `text-${color}-400`}`} />
+        </Button>
+        
+        <div className="text-center">
+          <p className="text-xs font-medium max-w-16 leading-tight truncate">
+            {device.device_name}
+          </p>
+          {device.battery_level && (
+            <div className="flex items-center justify-center space-x-1 mt-1">
+              <Battery className="h-3 w-3 text-gray-400" />
+              <span className="text-xs text-gray-400">{device.battery_level}%</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'connected':
-        return 'bg-green-500';
-      case 'discovered':
-        return 'bg-yellow-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
+  if (compact) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center">
+            <Bluetooth className="h-4 w-4 mr-2 text-blue-400" />
+            Devices
+          </h3>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={startDeviceScan}
+            disabled={isScanning}
+            className="rounded-full"
+          >
+            {isScanning ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 justify-items-center">
+          {connectedDevices.slice(0, 3).map(device => (
+            <CircularDeviceButton key={device.id} device={device} />
+          ))}
+        </div>
+
+        <div className="mt-4 text-center">
+          <Badge variant="outline" className="text-xs">
+            {connectedDevices.filter(d => d.is_trusted).length} Connected
+          </Badge>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Device Manager</h2>
-          <p className="text-muted-foreground">Manage Bluetooth and WiFi-Direct connections</p>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-bold flex items-center">
+          <Bluetooth className="h-5 w-5 mr-2 text-blue-400" />
+          Device Manager
+        </h3>
+        <div className="flex space-x-2">
+          <Button
+            onClick={startDeviceScan}
+            disabled={isScanning}
+            className="rounded-full"
+          >
+            {isScanning ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            <span className="ml-2">{isScanning ? 'Scanning...' : 'Scan'}</span>
+          </Button>
+          <Button variant="outline" size="sm" className="rounded-full">
+            <Settings className="h-4 w-4" />
+          </Button>
         </div>
-        <Button 
-          onClick={scanForDevices}
-          disabled={scanning}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {scanning ? 'Scanning...' : 'Scan for Devices'}
-        </Button>
       </div>
 
-      {/* Device Categories */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Connected Devices */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              Connected Devices
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {devices.filter(d => d.status === 'connected').map(device => (
-              <div key={device.id} className="p-4 border rounded-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {getDeviceIcon(device.type)}
-                    <div>
-                      <h4 className="font-medium">{device.name}</h4>
-                      <p className="text-sm text-muted-foreground capitalize">{device.type}</p>
-                    </div>
-                  </div>
-                  <Switch 
-                    checked={device.status === 'connected'}
-                    onCheckedChange={() => toggleDeviceConnection(device.id)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Signal Strength</span>
-                    <span>{device.signal}%</span>
-                  </div>
-                  <Progress value={device.signal} className="h-2" />
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline">Settings</Button>
-                  <Button size="sm" variant="outline">Audio Test</Button>
-                </div>
-              </div>
-            ))}
-            {devices.filter(d => d.status === 'connected').length === 0 && (
-              <p className="text-center text-muted-foreground py-8">No connected devices</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Available Devices */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              Available Devices
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {devices.filter(d => d.status !== 'connected').map(device => (
-              <div key={device.id} className="p-4 border rounded-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {getDeviceIcon(device.type)}
-                    <div>
-                      <h4 className="font-medium">{device.name}</h4>
-                      <p className="text-sm text-muted-foreground capitalize">{device.type}</p>
-                    </div>
-                  </div>
-                  <Badge variant={device.status === 'discovered' ? 'default' : 'secondary'}>
-                    {device.status}
-                  </Badge>
-                </div>
-                {device.status === 'discovered' && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Signal Strength</span>
-                      <span>{device.signal}%</span>
-                    </div>
-                    <Progress value={device.signal} className="h-2" />
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    onClick={() => toggleDeviceConnection(device.id)}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Connect
-                  </Button>
-                  {device.status === 'discovered' && (
-                    <Button size="sm" variant="outline">Pair</Button>
-                  )}
-                </div>
-              </div>
-            ))}
-            {devices.filter(d => d.status !== 'connected').length === 0 && (
-              <p className="text-center text-muted-foreground py-8">
-                {scanning ? 'Scanning for devices...' : 'No available devices'}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 justify-items-center">
+        {connectedDevices.map(device => (
+          <CircularDeviceButton key={device.id} device={device} />
+        ))}
       </div>
 
-      {/* Auto-Connect Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Auto-Connect Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div>
-                <p className="font-medium">Auto-connect to car audio</p>
-                <p className="text-sm text-muted-foreground">When in range</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div>
-                <p className="font-medium">Auto-connect to home speakers</p>
-                <p className="text-sm text-muted-foreground">When at home location</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div>
-                <p className="font-medium">Smart switching</p>
-                <p className="text-sm text-muted-foreground">Switch to best available device</p>
-              </div>
-              <Switch />
-            </div>
-            <div className="flex items-center justify-between p-3 border rounded-lg">
-              <div>
-                <p className="font-medium">Background scanning</p>
-                <p className="text-sm text-muted-foreground">Continuously scan for devices</p>
-              </div>
-              <Switch defaultChecked />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Device Stats */}
+      <div className="grid grid-cols-3 gap-4 text-center">
+        <div className={`p-3 rounded-lg ${
+          isDarkMode ? 'bg-white/5' : 'bg-gray-50'
+        }`}>
+          <p className="text-sm font-medium">Trusted</p>
+          <p className="text-lg font-bold text-green-400">
+            {connectedDevices.filter(d => d.is_trusted).length}
+          </p>
+        </div>
+        <div className={`p-3 rounded-lg ${
+          isDarkMode ? 'bg-white/5' : 'bg-gray-50'
+        }`}>
+          <p className="text-sm font-medium">Available</p>
+          <p className="text-lg font-bold text-blue-400">
+            {connectedDevices.length}
+          </p>
+        </div>
+        <div className={`p-3 rounded-lg ${
+          isDarkMode ? 'bg-white/5' : 'bg-gray-50'
+        }`}>
+          <p className="text-sm font-medium">Active</p>
+          <p className="text-lg font-bold text-purple-400">
+            {connectedDevices.filter(d => 
+              d.last_connected_at && 
+              new Date(d.last_connected_at) > new Date(Date.now() - 86400000)
+            ).length}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

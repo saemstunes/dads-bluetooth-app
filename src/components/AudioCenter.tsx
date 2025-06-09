@@ -1,294 +1,225 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Volume2, ArrowUp, ArrowDown, Bluetooth } from 'lucide-react';
+import { 
+  Play, 
+  Pause, 
+  SkipForward, 
+  SkipBack, 
+  Volume2, 
+  Shuffle, 
+  Repeat,
+  Music,
+  Radio
+} from 'lucide-react';
 
 interface AudioCenterProps {
-  currentTrack: {
-    title: string;
-    artist: string;
-    album: string;
-    duration: number;
-    currentTime: number;
-    isPlaying: boolean;
-  };
-  onTrackUpdate: (track: any) => void;
-  connectedDevices: Array<{
-    id: number;
-    name: string;
-    type: string;
-    status: string;
-  }>;
+  isDarkMode: boolean;
+  compact?: boolean;
 }
 
-const AudioCenter: React.FC<AudioCenterProps> = ({ 
-  currentTrack, 
-  onTrackUpdate, 
-  connectedDevices 
-}) => {
+const AudioCenter: React.FC<AudioCenterProps> = ({ isDarkMode, compact = false }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState([75]);
-  const [selectedOutput, setSelectedOutput] = useState('Car Audio System');
-  const [equalizer, setEqualizer] = useState({
-    bass: [50],
-    mid: [50],
-    treble: [50]
+  const [currentTrack] = useState({
+    title: 'Drive Time Playlist',
+    artist: 'Mixed Artists',
+    duration: 245,
+    progress: 120
   });
 
-  const audioFormats = [
-    { name: 'FLAC', quality: 'Lossless', supported: true },
-    { name: 'MP3', quality: '320kbps', supported: true },
-    { name: 'WAV', quality: 'Lossless', supported: true },
-    { name: 'AAC', quality: '256kbps', supported: true },
-    { name: 'OGG', quality: 'Variable', supported: true }
-  ];
+  const CircularAudioControl = ({ icon: Icon, onClick, active = false, size = 'md' }) => {
+    const sizeClasses = {
+      sm: 'w-10 h-10',
+      md: 'w-12 h-12',
+      lg: 'w-16 h-16'
+    };
 
-  const playlists = [
-    { name: 'Driving Mix', tracks: 45, duration: '3h 12m' },
-    { name: 'Workout Energy', tracks: 32, duration: '2h 18m' },
-    { name: 'Chill Vibes', tracks: 28, duration: '1h 45m' },
-    { name: 'Focus Mode', tracks: 20, duration: '1h 30m' }
-  ];
-
-  const togglePlayback = () => {
-    onTrackUpdate({
-      ...currentTrack,
-      isPlaying: !currentTrack.isPlaying
-    });
+    return (
+      <Button
+        onClick={onClick}
+        className={`
+          ${sizeClasses[size]} rounded-full p-0 transition-all duration-300 hover:scale-105
+          ${active 
+            ? 'bg-purple-500 shadow-lg shadow-purple-500/50' 
+            : 'bg-white/10 hover:bg-white/20'
+          }
+        `}
+      >
+        <Icon className="h-5 w-5" />
+      </Button>
+    );
   };
 
-  const nextTrack = () => {
-    // Simulate next track
-    onTrackUpdate({
-      title: 'Stairway to Heaven',
-      artist: 'Led Zeppelin',
-      album: 'Led Zeppelin IV',
-      duration: 482,
-      currentTime: 0,
-      isPlaying: true
-    });
-  };
+  if (compact) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center">
+            <Music className="h-4 w-4 mr-2 text-purple-400" />
+            Audio
+          </h3>
+          <Button size="sm" variant="outline" className="rounded-full">
+            <Radio className="h-4 w-4" />
+          </Button>
+        </div>
 
-  const previousTrack = () => {
-    // Simulate previous track
-    onTrackUpdate({
-      title: 'Hotel California',
-      artist: 'Eagles',
-      album: 'Hotel California',
-      duration: 391,
-      currentTime: 0,
-      isPlaying: true
-    });
-  };
+        <div className="space-y-4">
+          {/* Current Track */}
+          <div className={`p-3 rounded-lg ${
+            isDarkMode ? 'bg-white/5' : 'bg-gray-50'
+          }`}>
+            <p className="font-medium text-sm truncate">{currentTrack.title}</p>
+            <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              {currentTrack.artist}
+            </p>
+            
+            {/* Progress bar */}
+            <div className="mt-2">
+              <div className={`w-full h-1 rounded-full ${
+                isDarkMode ? 'bg-white/10' : 'bg-gray-200'
+              }`}>
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-1 rounded-full"
+                  style={{ width: `${(currentTrack.progress / currentTrack.duration) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Circular Controls */}
+          <div className="flex items-center justify-center space-x-4">
+            <CircularAudioControl 
+              icon={SkipBack} 
+              onClick={() => console.log('Previous')}
+              size="sm"
+            />
+            <CircularAudioControl 
+              icon={isPlaying ? Pause : Play} 
+              onClick={() => setIsPlaying(!isPlaying)}
+              active={isPlaying}
+              size="lg"
+            />
+            <CircularAudioControl 
+              icon={SkipForward} 
+              onClick={() => console.log('Next')}
+              size="sm"
+            />
+          </div>
+
+          {/* Volume Control */}
+          <div className="flex items-center space-x-2">
+            <Volume2 className="h-4 w-4 text-gray-400" />
+            <Slider
+              value={volume}
+              onValueChange={setVolume}
+              max={100}
+              step={1}
+              className="flex-1"
+            />
+            <span className="text-xs text-gray-400 w-8">{volume[0]}%</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Audio Control Center</h2>
-          <p className="text-muted-foreground">Universal audio management and playback</p>
+      <h3 className="text-xl font-bold flex items-center">
+        <Music className="h-5 w-5 mr-2 text-purple-400" />
+        Audio Control Center
+      </h3>
+
+      {/* Current Track Display */}
+      <div className={`p-4 rounded-lg ${
+        isDarkMode ? 'bg-white/5' : 'bg-gray-50'
+      }`}>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="font-medium">{currentTrack.title}</p>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              {currentTrack.artist}
+            </p>
+          </div>
+          <div className="flex space-x-2">
+            <Button variant="ghost" size="sm" className="rounded-full">
+              <Shuffle className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="rounded-full">
+              <Repeat className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-green-600 border-green-600">
-            FLAC Quality
-          </Badge>
-          <Badge variant="outline">
-            {connectedDevices.length} Devices
-          </Badge>
+
+        {/* Progress Bar */}
+        <div className={`w-full h-2 rounded-full ${
+          isDarkMode ? 'bg-white/10' : 'bg-gray-200'
+        }`}>
+          <div 
+            className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${(currentTrack.progress / currentTrack.duration) * 100}%` }}
+          />
+        </div>
+        
+        <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <span>{Math.floor(currentTrack.progress / 60)}:{(currentTrack.progress % 60).toString().padStart(2, '0')}</span>
+          <span>{Math.floor(currentTrack.duration / 60)}:{(currentTrack.duration % 60).toString().padStart(2, '0')}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Player */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Now Playing</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Album Art and Track Info */}
-            <div className="flex items-center gap-6">
-              <div className="w-32 h-32 bg-gradient-to-br from-purple-400 to-blue-500 rounded-lg flex items-center justify-center">
-                <Volume2 className="h-16 w-16 text-white" />
-              </div>
-              <div className="flex-1 space-y-2">
-                <h3 className="text-xl font-semibold">{currentTrack.title}</h3>
-                <p className="text-lg text-muted-foreground">{currentTrack.artist}</p>
-                <p className="text-sm text-muted-foreground">{currentTrack.album}</p>
-                <Badge variant="secondary">Rock • 1975</Badge>
-              </div>
-            </div>
+      {/* Circular Audio Controls */}
+      <div className="flex items-center justify-center space-x-6">
+        <CircularAudioControl 
+          icon={SkipBack} 
+          onClick={() => console.log('Previous track')}
+        />
+        <CircularAudioControl 
+          icon={isPlaying ? Pause : Play} 
+          onClick={() => setIsPlaying(!isPlaying)}
+          active={isPlaying}
+          size="lg"
+        />
+        <CircularAudioControl 
+          icon={SkipForward} 
+          onClick={() => console.log('Next track')}
+        />
+      </div>
 
-            {/* Playback Controls */}
-            <div className="space-y-4">
-              <div className="flex justify-center gap-4">
-                <Button variant="outline" size="lg" onClick={previousTrack}>
-                  <ArrowUp className="h-5 w-5 rotate-[-90deg]" />
-                </Button>
-                <Button size="lg" onClick={togglePlayback} className="w-16 h-16 rounded-full">
-                  {currentTrack.isPlaying ? '⏸️' : '▶️'}
-                </Button>
-                <Button variant="outline" size="lg" onClick={nextTrack}>
-                  <ArrowUp className="h-5 w-5 rotate-90" />
-                </Button>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <Slider
-                  value={[(currentTrack.currentTime / currentTrack.duration) * 100]}
-                  onValueChange={([value]) => {
-                    onTrackUpdate({
-                      ...currentTrack,
-                      currentTime: Math.floor((value / 100) * currentTrack.duration)
-                    });
-                  }}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{Math.floor(currentTrack.currentTime / 60)}:{(currentTrack.currentTime % 60).toString().padStart(2, '0')}</span>
-                  <span>{Math.floor(currentTrack.duration / 60)}:{(currentTrack.duration % 60).toString().padStart(2, '0')}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Volume and Output */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Volume</label>
-                <div className="flex items-center gap-3">
-                  <Volume2 className="h-4 w-4" />
-                  <Slider
-                    value={volume}
-                    onValueChange={setVolume}
-                    max={100}
-                    step={1}
-                    className="flex-1"
-                  />
-                  <span className="text-sm w-8">{volume[0]}%</span>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Output Device</label>
-                <Select value={selectedOutput} onValueChange={setSelectedOutput}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {connectedDevices.map(device => (
-                      <SelectItem key={device.id} value={device.name}>
-                        <div className="flex items-center gap-2">
-                          <Bluetooth className="h-4 w-4" />
-                          {device.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Side Panel */}
-        <div className="space-y-6">
-          {/* Format Support */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Supported Formats</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {audioFormats.map(format => (
-                <div key={format.name} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{format.name}</p>
-                    <p className="text-sm text-muted-foreground">{format.quality}</p>
-                  </div>
-                  <Badge variant={format.supported ? "default" : "secondary"}>
-                    {format.supported ? "✓" : "○"}
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Quick Playlists */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Access</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {playlists.map(playlist => (
-                <div key={playlist.name} className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                  <p className="font-medium">{playlist.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {playlist.tracks} tracks • {playlist.duration}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+      {/* Volume Control */}
+      <div className="space-y-3">
+        <div className="flex items-center space-x-3">
+          <Volume2 className="h-4 w-4 text-gray-400" />
+          <Slider
+            value={volume}
+            onValueChange={setVolume}
+            max={100}
+            step={1}
+            className="flex-1"
+          />
+          <span className="text-sm text-gray-400 w-10">{volume[0]}%</span>
         </div>
       </div>
 
-      {/* Equalizer */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Audio Equalizer</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Bass</label>
-              <Slider
-                value={equalizer.bass}
-                onValueChange={(value) => setEqualizer({...equalizer, bass: value})}
-                max={100}
-                step={1}
-                className="w-full"
-              />
-              <div className="text-center text-sm text-muted-foreground">{equalizer.bass[0]}%</div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Mid</label>
-              <Slider
-                value={equalizer.mid}
-                onValueChange={(value) => setEqualizer({...equalizer, mid: value})}
-                max={100}
-                step={1}
-                className="w-full"
-              />
-              <div className="text-center text-sm text-muted-foreground">{equalizer.mid[0]}%</div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Treble</label>
-              <Slider
-                value={equalizer.treble}
-                onValueChange={(value) => setEqualizer({...equalizer, treble: value})}
-                max={100}
-                step={1}
-                className="w-full"
-              />
-              <div className="text-center text-sm text-muted-foreground">{equalizer.treble[0]}%</div>
-            </div>
-          </div>
-          
-          <div className="flex justify-center gap-2 mt-4">
-            <Button variant="outline" size="sm">Reset</Button>
-            <Button variant="outline" size="sm">Rock</Button>
-            <Button variant="outline" size="sm">Pop</Button>
-            <Button variant="outline" size="sm">Classical</Button>
-            <Button variant="outline" size="sm">Jazz</Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Quick Audio Sources */}
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { name: 'Bluetooth Audio', active: true },
+          { name: 'Local Files', active: false },
+          { name: 'Streaming', active: false },
+          { name: 'Radio', active: false }
+        ].map((source, index) => (
+          <Button
+            key={index}
+            variant={source.active ? "default" : "outline"}
+            size="sm"
+            className="rounded-full"
+          >
+            {source.name}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 };
