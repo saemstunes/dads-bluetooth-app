@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,23 +8,27 @@ import BluetoothManager from './BluetoothManager';
 import EnhancedAudioPlayer from './EnhancedAudioPlayer';
 import AutomationBuilder from './AutomationBuilder';
 import StatusIndicators from './StatusIndicators';
+import Settings from './Settings';
+import Dock from './Dock';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   Zap, 
-  Settings, 
+  Settings as SettingsIcon, 
   Moon, 
   Sun, 
   Car, 
   Home, 
   Activity,
-  Minimize2
+  Minimize2,
+  Music,
+  Archive
 } from 'lucide-react';
 
 const WambuguHub = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [activeView, setActiveView] = useState('main');
+  const [activeView, setActiveView] = useState<'main' | 'automation' | 'settings'>('main');
   const [isCarMode, setIsCarMode] = useState(false);
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [automationRules, setAutomationRules] = useState([]);
@@ -86,6 +91,35 @@ const WambuguHub = () => {
     }
   };
 
+  // Dock items
+  const dockItems = [
+    { 
+      icon: <Home size={20} />, 
+      label: 'Home', 
+      onClick: () => setActiveView('main')
+    },
+    { 
+      icon: <Activity size={20} />, 
+      label: 'Automation', 
+      onClick: () => setActiveView('automation')
+    },
+    { 
+      icon: <Music size={20} />, 
+      label: 'Audio', 
+      onClick: () => console.log('Audio Center')
+    },
+    { 
+      icon: <Car size={20} />, 
+      label: 'Car Mode', 
+      onClick: toggleCarMode
+    },
+    { 
+      icon: <SettingsIcon size={20} />, 
+      label: 'Settings', 
+      onClick: () => setActiveView('settings')
+    },
+  ];
+
   const CircularButton = ({ 
     icon: Icon, 
     label, 
@@ -130,7 +164,7 @@ const WambuguHub = () => {
             : (isDarkMode ? 'text-white/80' : 'text-black/70')
           }`} />
         </Button>
-        <span className={`text-base font-semibold text-center max-w-20 leading-tight ${
+        <span className={`text-lg font-bold text-center max-w-20 leading-tight ${
           isDarkMode ? 'text-white/90' : 'text-black/80'
         }`}>
           {label}
@@ -179,9 +213,9 @@ const WambuguHub = () => {
             </div>
           </div>
 
-          <div className="max-w-5xl mx-auto p-8 space-y-10">
+          <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-6 md:space-y-10">
             {/* Large Voice Interface */}
-            <Card className={`p-10 border transition-all duration-500 ${
+            <Card className={`p-6 md:p-10 border transition-all duration-500 ${
               isDarkMode 
                 ? 'bg-white/5 border-white/10 hover:bg-white/8' 
                 : 'bg-white/90 border-gray-200/50 hover:bg-white/95'
@@ -190,7 +224,7 @@ const WambuguHub = () => {
             </Card>
 
             {/* Enhanced Car Controls */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
               <EnhancedAudioPlayer isDarkMode={isDarkMode} compact={true} />
               <BluetoothManager isDarkMode={isDarkMode} />
             </div>
@@ -202,7 +236,7 @@ const WambuguHub = () => {
 
   return (
     <AudioProvider>
-      <div className={`min-h-screen transition-all duration-700 relative overflow-hidden ${
+      <div className={`min-h-screen transition-all duration-700 relative overflow-hidden pb-24 ${
         isDarkMode 
           ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-black text-white' 
           : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900'
@@ -248,28 +282,16 @@ const WambuguHub = () => {
               >
                 {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setActiveView('settings')}
-                className={`rounded-full transition-all duration-300 hover:scale-105 transform ${
-                  isDarkMode 
-                    ? 'hover:bg-white/10 text-gray-300' 
-                    : 'hover:bg-gray-100 text-gray-600'
-                }`}
-              >
-                <Settings className="h-5 w-5" />
-              </Button>
             </div>
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto p-8 space-y-8 relative z-10">
+        <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8 relative z-10 pb-20">
           {/* Main Dashboard View */}
           {activeView === 'main' && (
             <>
               {/* Voice Interface - Central Focus */}
-              <Card className={`p-8 border transition-all duration-500 ${
+              <Card className={`p-6 md:p-8 border transition-all duration-500 ${
                 isDarkMode 
                   ? 'bg-white/5 border-white/10 hover:bg-white/8' 
                   : 'bg-white/90 border-gray-200/50 hover:bg-white/95'
@@ -278,59 +300,62 @@ const WambuguHub = () => {
               </Card>
 
               {/* Quick Action Ring */}
-              <Card className={`p-10 border transition-all duration-500 ${
+              <Card className={`p-6 md:p-10 border transition-all duration-500 ${
                 isDarkMode 
                   ? 'bg-white/5 border-white/10 hover:bg-white/8' 
                   : 'bg-white/90 border-gray-200/50 hover:bg-white/95'
               } backdrop-blur-md rounded-3xl shadow-2xl hover:shadow-3xl`}>
-                <div className="text-center mb-8">
-                  <h2 className={`text-2xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <div className="text-center mb-6 md:mb-8">
+                  <h2 className={`text-xl md:text-2xl font-bold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Quick Actions
                   </h2>
-                  <p className={`text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className={`text-base md:text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     Tap to activate modes and controls
                   </p>
                 </div>
-                <div className="flex items-center justify-center">
-                  <div className="grid grid-cols-3 gap-12 items-center">
+                <div className="flex items-center justify-center overflow-x-auto">
+                  <div className="grid grid-cols-3 gap-4 md:gap-12 items-center min-w-fit px-4">
                     <CircularButton 
                       icon={Car} 
                       label="Car Mode" 
                       onClick={toggleCarMode}
                       active={isCarMode}
+                      size={typeof window !== 'undefined' && window.innerWidth < 768 ? 'md' : 'lg'}
                     />
                     <CircularButton 
                       icon={Activity} 
                       label="Automation" 
                       onClick={() => setActiveView('automation')}
                       active={activeView === 'automation'}
+                      size={typeof window !== 'undefined' && window.innerWidth < 768 ? 'md' : 'lg'}
                     />
                     <CircularButton 
                       icon={Home} 
                       label="Home Mode" 
                       onClick={() => console.log('Home mode activated')}
+                      size={typeof window !== 'undefined' && window.innerWidth < 768 ? 'md' : 'lg'}
                     />
                   </div>
                 </div>
               </Card>
 
               {/* Enhanced Device & Audio Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
                 <BluetoothManager isDarkMode={isDarkMode} />
                 <EnhancedAudioPlayer isDarkMode={isDarkMode} compact={true} />
               </div>
 
               {/* Active Rules Summary */}
-              <Card className={`p-6 border transition-all duration-500 ${
+              <Card className={`p-4 md:p-6 border transition-all duration-500 mb-20 ${
                 isDarkMode 
                   ? 'bg-white/5 border-white/10 hover:bg-white/8' 
                   : 'bg-white/90 border-gray-200/50 hover:bg-white/95'
               } backdrop-blur-md rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-102`}>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <div className="flex items-center justify-between mb-4 md:mb-6">
+                  <h3 className={`text-lg md:text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Active Automation Rules
                   </h3>
-                  <Badge variant="outline" className={`text-lg px-4 py-2 ${
+                  <Badge variant="outline" className={`text-base md:text-lg px-3 md:px-4 py-1 md:py-2 ${
                     isDarkMode 
                       ? 'text-green-400 border-green-400/50 bg-green-400/10' 
                       : 'text-green-600 border-green-400 bg-green-50'
@@ -338,18 +363,18 @@ const WambuguHub = () => {
                     {automationRules.filter(rule => rule.enabled).length} Active
                   </Badge>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                   {automationRules.slice(0, 3).map(rule => (
                     <div 
                       key={rule.id}
-                      className={`p-4 rounded-xl border transition-all duration-300 hover:scale-105 transform ${
+                      className={`p-3 md:p-4 rounded-xl border transition-all duration-300 hover:scale-105 transform ${
                         isDarkMode 
                           ? 'bg-white/5 border-white/10 hover:bg-white/8' 
                           : 'bg-white/50 border-gray-200/30 hover:bg-white/70'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className={`font-semibold text-lg ${
+                        <span className={`font-semibold text-base md:text-lg ${
                           isDarkMode ? 'text-white' : 'text-gray-900'
                         }`}>
                           {rule.name}
@@ -358,7 +383,7 @@ const WambuguHub = () => {
                           rule.enabled ? 'bg-green-400' : 'bg-gray-400'
                         }`} />
                       </div>
-                      <p className={`text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <p className={`text-sm md:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         {rule.execution_count} executions
                       </p>
                     </div>
@@ -370,19 +395,19 @@ const WambuguHub = () => {
 
           {/* Automation Builder View */}
           {activeView === 'automation' && (
-            <Card className={`p-8 border transition-all duration-500 ${
+            <Card className={`p-6 md:p-8 border transition-all duration-500 ${
               isDarkMode 
                 ? 'bg-white/5 border-white/10 hover:bg-white/8' 
                 : 'bg-white/90 border-gray-200/50 hover:bg-white/95'
             } backdrop-blur-md rounded-3xl shadow-2xl`}>
-              <div className="flex items-center justify-between mb-8">
-                <h2 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <div className="flex items-center justify-between mb-6 md:mb-8">
+                <h2 className={`text-2xl md:text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   Automation Builder
                 </h2>
                 <Button 
                   variant="outline" 
                   onClick={() => setActiveView('main')}
-                  className={`rounded-full text-lg px-6 py-3 transition-all duration-300 hover:scale-105 transform ${
+                  className={`rounded-full text-base md:text-lg px-4 md:px-6 py-2 md:py-3 transition-all duration-300 hover:scale-105 transform ${
                     isDarkMode 
                       ? 'border-white/20 hover:bg-white/10 hover:border-white/30' 
                       : 'border-gray-300 hover:bg-gray-50'
@@ -397,7 +422,42 @@ const WambuguHub = () => {
               />
             </Card>
           )}
+
+          {/* Settings View */}
+          {activeView === 'settings' && (
+            <Card className={`p-6 md:p-8 border transition-all duration-500 ${
+              isDarkMode 
+                ? 'bg-white/5 border-white/10 hover:bg-white/8' 
+                : 'bg-white/90 border-gray-200/50 hover:bg-white/95'
+            } backdrop-blur-md rounded-3xl shadow-2xl`}>
+              <div className="flex items-center justify-between mb-6 md:mb-8">
+                <h2 className={`text-2xl md:text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Settings
+                </h2>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActiveView('main')}
+                  className={`rounded-full text-base md:text-lg px-4 md:px-6 py-2 md:py-3 transition-all duration-300 hover:scale-105 transform ${
+                    isDarkMode 
+                      ? 'border-white/20 hover:bg-white/10 hover:border-white/30' 
+                      : 'border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Back to Dashboard
+                </Button>
+              </div>
+              <Settings isDarkMode={isDarkMode} />
+            </Card>
+          )}
         </div>
+
+        {/* Dock */}
+        <Dock 
+          items={dockItems}
+          panelHeight={68}
+          baseItemSize={50}
+          magnification={70}
+        />
       </div>
     </AudioProvider>
   );

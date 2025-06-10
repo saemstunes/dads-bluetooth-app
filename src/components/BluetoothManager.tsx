@@ -13,19 +13,22 @@ import {
   Car,
   Smartphone,
   Speaker,
-  Scan
+  Scan,
+  Watch,
+  Gamepad2
 } from 'lucide-react';
 
 interface BluetoothDevice {
   id: string;
   name: string;
-  type: 'audio' | 'car' | 'phone' | 'speaker';
+  type: 'audio' | 'car' | 'phone' | 'speaker' | 'watch' | 'gamepad' | 'unknown';
   connected: boolean;
   paired: boolean;
   battery?: number;
   signalStrength: number;
   lastConnected?: Date;
   audioProfile?: 'A2DP' | 'HFP' | 'AVRCP';
+  category: 'headphones' | 'earphones' | 'smartwatch' | 'phone' | 'car' | 'speaker' | 'gamepad' | 'other';
 }
 
 const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => {
@@ -34,6 +37,7 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
       id: '1',
       name: 'Samsung Galaxy Buds Pro',
       type: 'audio',
+      category: 'earphones',
       connected: true,
       paired: true,
       battery: 85,
@@ -45,6 +49,7 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
       id: '2', 
       name: 'BMW Car Audio',
       type: 'car',
+      category: 'car',
       connected: false,
       paired: true,
       signalStrength: 0,
@@ -55,6 +60,7 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
       id: '3',
       name: 'iPhone 15 Pro',
       type: 'phone',
+      category: 'phone',
       connected: false,
       paired: true,
       signalStrength: 0,
@@ -64,6 +70,16 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
   
   const [isScanning, setIsScanning] = useState(false);
   const [nearbyDevices, setNearbyDevices] = useState<BluetoothDevice[]>([]);
+  const [deviceCategories] = useState([
+    { name: 'Headphones', icon: Headphones, type: 'headphones' },
+    { name: 'Earphones', icon: Headphones, type: 'earphones' },
+    { name: 'Mobile Phones', icon: Smartphone, type: 'phone' },
+    { name: 'Smart Watches', icon: Watch, type: 'smartwatch' },
+    { name: 'Car Audio', icon: Car, type: 'car' },
+    { name: 'Speakers', icon: Speaker, type: 'speaker' },
+    { name: 'Gaming Controllers', icon: Gamepad2, type: 'gamepad' }
+  ]);
+  
   const { toast } = useToast();
   const { connectBluetoothDevice } = useAudio();
 
@@ -73,6 +89,8 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
       case 'car': return Car;
       case 'phone': return Smartphone;
       case 'speaker': return Speaker;
+      case 'watch': return Watch;
+      case 'gamepad': return Gamepad2;
       default: return Bluetooth;
     }
   };
@@ -82,7 +100,9 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
       audio: connected ? 'text-green-400' : 'text-green-600',
       car: connected ? 'text-blue-400' : 'text-blue-600',
       phone: connected ? 'text-purple-400' : 'text-purple-600',
-      speaker: connected ? 'text-orange-400' : 'text-orange-600'
+      speaker: connected ? 'text-orange-400' : 'text-orange-600',
+      watch: connected ? 'text-pink-400' : 'text-pink-600',
+      gamepad: connected ? 'text-yellow-400' : 'text-yellow-600'
     };
     return colors[type] || 'text-gray-400';
   };
@@ -91,9 +111,10 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
     setIsScanning(true);
     
     try {
-      // Web Bluetooth API for actual scanning
-      if ('bluetooth' in navigator) {
-        const device = await navigator.bluetooth.requestDevice({
+      // Check if Web Bluetooth API is available
+      if ('bluetooth' in navigator && (navigator.bluetooth as any)) {
+        const bluetoothNav = navigator.bluetooth as any;
+        const device = await bluetoothNav.requestDevice({
           acceptAllDevices: true,
           optionalServices: ['battery_service', 'device_information']
         });
@@ -102,9 +123,10 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
         
         // Add to nearby devices
         const newDevice: BluetoothDevice = {
-          id: device.id,
+          id: device.id || Math.random().toString(),
           name: device.name || 'Unknown Device',
           type: 'audio',
+          category: 'other',
           connected: false,
           paired: false,
           signalStrength: 80,
@@ -113,13 +135,14 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
         
         setNearbyDevices(prev => [...prev, newDevice]);
       } else {
-        // Simulate scanning for demo
+        // Simulate scanning for demo with various device categories
         setTimeout(() => {
           const simulatedDevices: BluetoothDevice[] = [
             {
               id: '4',
               name: 'AirPods Pro',
               type: 'audio',
+              category: 'earphones',
               connected: false,
               paired: false,
               signalStrength: 75,
@@ -127,8 +150,19 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
             },
             {
               id: '5',
+              name: 'Apple Watch Series 9',
+              type: 'watch',
+              category: 'smartwatch',
+              connected: false,
+              paired: false,
+              signalStrength: 85,
+              battery: 67
+            },
+            {
+              id: '6',
               name: 'Tesla Model S',
               type: 'car',
+              category: 'car',
               connected: false,
               paired: false,
               signalStrength: 65,
@@ -210,37 +244,40 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
     const Icon = getDeviceIcon(device.type);
     
     return (
-      <Card className={`p-4 transition-all duration-300 hover:scale-105 transform ${
+      <Card className={`p-6 transition-all duration-500 hover:scale-105 transform ${
         isDarkMode 
           ? 'bg-white/5 border-white/10 hover:bg-white/8' 
           : 'bg-white/80 border-gray-200/50 hover:bg-white/90'
-      } backdrop-blur-md rounded-2xl shadow-lg hover:shadow-xl`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-full ${
+      } backdrop-blur-md rounded-3xl shadow-lg hover:shadow-xl`}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <div className={`p-3 rounded-full ${
               device.connected 
                 ? 'bg-green-500/20 border border-green-500/30' 
                 : 'bg-gray-500/20 border border-gray-500/30'
             }`}>
-              <Icon className={`h-5 w-5 ${getDeviceColor(device.type, device.connected)}`} />
+              <Icon className={`h-6 w-6 ${getDeviceColor(device.type, device.connected)}`} />
             </div>
             <div>
-              <h4 className={`font-semibold text-sm ${
+              <h4 className={`font-bold text-lg ${
                 isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>
                 {device.name}
               </h4>
-              <div className="flex items-center space-x-2 mt-1">
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {device.category}
+              </p>
+              <div className="flex items-center space-x-3 mt-2">
                 {device.battery && (
                   <div className="flex items-center space-x-1">
-                    <Battery className="h-3 w-3 text-green-400" />
-                    <span className="text-xs text-green-400">{device.battery}%</span>
+                    <Battery className="h-4 w-4 text-green-400" />
+                    <span className="text-sm text-green-400">{device.battery}%</span>
                   </div>
                 )}
                 {device.connected && (
                   <div className="flex items-center space-x-1">
-                    <Signal className="h-3 w-3 text-blue-400" />
-                    <span className="text-xs text-blue-400">{device.signalStrength}%</span>
+                    <Signal className="h-4 w-4 text-blue-400" />
+                    <span className="text-sm text-blue-400">{device.signalStrength}%</span>
                   </div>
                 )}
               </div>
@@ -248,9 +285,9 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
           </div>
           
           <Button
-            size="sm"
+            size="lg"
             onClick={() => device.connected ? disconnectDevice(device) : connectDevice(device)}
-            className={`rounded-full text-xs font-medium transition-all duration-300 hover:scale-105 ${
+            className={`rounded-full text-lg px-6 py-3 font-semibold transition-all duration-300 hover:scale-105 ${
               device.connected
                 ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30'
                 : 'bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30'
@@ -261,7 +298,7 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
         </div>
 
         <div className="flex items-center justify-between">
-          <Badge variant="outline" className={`text-xs ${
+          <Badge variant="outline" className={`text-base px-4 py-2 ${
             device.connected
               ? 'text-green-400 border-green-400/50'
               : device.paired
@@ -272,7 +309,7 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
           </Badge>
           
           {device.audioProfile && device.connected && (
-            <span className={`text-xs ${isDarkMode ? 'text-white/60' : 'text-gray-500'}`}>
+            <span className={`text-lg ${isDarkMode ? 'text-white/60' : 'text-gray-500'}`}>
               {device.audioProfile}
             </span>
           )}
@@ -282,34 +319,54 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h3 className={`text-xl font-bold flex items-center ${
+        <h3 className={`text-2xl font-bold flex items-center ${
           isDarkMode ? 'text-white' : 'text-gray-900'
         }`}>
-          <Bluetooth className="h-5 w-5 mr-2 text-blue-400" />
+          <Bluetooth className="h-6 w-6 mr-3 text-blue-400" />
           Bluetooth Manager
         </h3>
         
         <Button
+          size="lg"
           onClick={startScan}
           disabled={isScanning}
-          className={`rounded-full transition-all duration-300 hover:scale-105 ${
+          className={`rounded-full text-lg px-6 py-3 transition-all duration-300 hover:scale-105 ${
             isScanning 
               ? 'bg-blue-500/30 cursor-not-allowed' 
               : 'bg-blue-500/20 hover:bg-blue-500/30'
           } text-blue-400 border border-blue-500/30`}
         >
           {isScanning ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400" />
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400" />
           ) : (
-            <Scan className="h-4 w-4" />
+            <Scan className="h-5 w-5" />
           )}
-          <span className="ml-2">{isScanning ? 'Scanning...' : 'Scan'}</span>
+          <span className="ml-3">{isScanning ? 'Scanning...' : 'Scan'}</span>
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Device Categories */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {deviceCategories.map((category, index) => {
+          const Icon = category.icon;
+          return (
+            <Card key={index} className={`p-4 text-center transition-all duration-300 hover:scale-105 ${
+              isDarkMode 
+                ? 'bg-white/5 border-white/10 hover:bg-white/8' 
+                : 'bg-white/80 border-gray-200/50 hover:bg-white/90'
+            } backdrop-blur-md rounded-2xl shadow-lg hover:shadow-xl cursor-pointer`}>
+              <Icon className={`h-8 w-8 mx-auto mb-2 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`} />
+              <p className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {category.name}
+              </p>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
         {devices.map(device => (
           <DeviceCard key={device.id} device={device} />
         ))}
@@ -317,12 +374,12 @@ const BluetoothManager: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => 
 
       {nearbyDevices.length > 0 && (
         <div>
-          <h4 className={`text-lg font-semibold mb-3 ${
+          <h4 className={`text-xl font-bold mb-4 ${
             isDarkMode ? 'text-white' : 'text-gray-900'
           }`}>
             Nearby Devices
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-6">
             {nearbyDevices.map(device => (
               <DeviceCard key={device.id} device={device} />
             ))}
