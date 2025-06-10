@@ -455,7 +455,6 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
             value={volume}
             onChange={setVolume}
             max={100}
-            step={1}
             className="flex-1"
           />
           <span className="text-sm text-gray-400 w-10">{volume}%</span>
@@ -484,7 +483,4 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
   );
 };
 
-import { Music } from 'lucide-react';
 export default EnhancedAudioPlayer;
-
-}
