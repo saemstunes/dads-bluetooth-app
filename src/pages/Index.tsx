@@ -1,6 +1,6 @@
 
 import React from 'react';
-import WambuguHub from '../components/JarvisHub';
+import WambuguHub from '../components/WambuguHub';
 
 const Index = () => {
   return <WambuguHub />;
