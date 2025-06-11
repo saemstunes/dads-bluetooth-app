@@ -45,6 +45,11 @@ function DockItem({
   );
   const size = useSpring(targetSize, spring);
 
+  const maxHeight = useMemo(
+    () => Math.max(256, Number(magnification) + (Number(magnification) / 2) + 4),
+    [magnification]
+  );
+
   return (
     <motion.div
       ref={ref}
@@ -118,7 +123,7 @@ export default function Dock({
   const isHovered = useMotionValue(0);
 
   const maxHeight = useMemo(
-    () => Math.max(dockHeight, magnification + (magnification / 2) + 4),
+    () => Math.max(Number(dockHeight), Number(magnification) + (Number(magnification) / 2) + 4),
     [magnification, dockHeight]
   );
   const heightRow = useTransform(isHovered, [0, 1], [panelHeight, maxHeight]);
