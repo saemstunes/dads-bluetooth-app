@@ -33,13 +33,13 @@ const ElasticSlider: React.FC<ElasticSliderProps> = ({
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    onChange(localValue);
+    onChange(Math.round(localValue)); // Ensure integer value
   };
 
   const updateValue = (e: MouseEvent | React.MouseEvent) => {
     const rect = (e.target as HTMLElement).getBoundingClientRect();
     const percentage = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const newValue = Math.round(percentage * max);
+    const newValue = Math.round(percentage * max); // Round to nearest integer
     setLocalValue(newValue);
   };
 
@@ -56,7 +56,7 @@ const ElasticSlider: React.FC<ElasticSliderProps> = ({
 
   useEffect(() => {
     if (!isDragging) {
-      setLocalValue(Math.round(value));
+      setLocalValue(Math.round(value)); // Always use integer values
     }
   }, [value, isDragging]);
 
@@ -146,47 +146,47 @@ const MiniPlayer: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => {
   if (!currentTrack || !isPlaying) return null;
 
   return (
-    <Card className={`fixed bottom-20 left-4 right-4 p-4 transition-all duration-500 z-40 ${
+    <Card className={`fixed bottom-24 left-4 right-4 p-3 transition-all duration-500 z-40 ${
       isDarkMode 
         ? 'bg-black/90 border-white/20' 
         : 'bg-white/90 border-gray-300'
     } backdrop-blur-md rounded-2xl shadow-2xl`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-            <Music className="h-6 w-6 text-white" />
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+            <Music className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <h4 className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div className="min-w-0 flex-1">
+            <h4 className={`font-bold text-sm truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               {currentTrack.title}
             </h4>
-            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               {currentTrack.artist}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
           <Button
             size="sm"
             onClick={previous}
-            className="rounded-full w-10 h-10 p-0"
+            className="rounded-full w-8 h-8 p-0"
           >
-            <SkipBack className="h-4 w-4" />
+            <SkipBack className="h-3 w-3" />
           </Button>
           <Button
             size="sm"
             onClick={isPlaying ? pause : play}
-            className="rounded-full w-12 h-12 p-0"
+            className="rounded-full w-10 h-10 p-0"
           >
-            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
           <Button
             size="sm"
             onClick={next}
-            className="rounded-full w-10 h-10 p-0"
+            className="rounded-full w-8 h-8 p-0"
           >
-            <SkipForward className="h-4 w-4" />
+            <SkipForward className="h-3 w-3" />
           </Button>
         </div>
       </div>
@@ -275,48 +275,48 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
   if (compact) {
     return (
       <>
-        <Card className={`p-8 border transition-all duration-500 backdrop-blur-md ${
+        <Card className={`p-6 md:p-8 border transition-all duration-500 backdrop-blur-md ${
           isDarkMode 
             ? 'bg-white/5 border-white/10 hover:bg-white/8' 
             : 'bg-white/80 border-gray-200/50 hover:bg-white/90'
         } rounded-3xl shadow-2xl hover:shadow-3xl transform hover:scale-102`}>
-          <div className="space-y-8">
+          <div className="space-y-6 md:space-y-8">
             <div className="text-center">
-              <h3 className={`text-2xl font-bold mb-3 ${
+              <h3 className={`text-xl md:text-2xl font-bold mb-3 ${
                 isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>
                 <BlurText isVisible={!!currentTrack}>Now Playing</BlurText>
               </h3>
               {connectedDevice && (
-                <p className={`text-lg ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                <p className={`text-base md:text-lg ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                   ♪ {connectedDevice}
                 </p>
               )}
             </div>
 
             {currentTrack && (
-              <GlareHover className={`p-6 rounded-3xl ${
+              <GlareHover className={`p-4 md:p-6 rounded-3xl ${
                 isDarkMode ? 'bg-white/5' : 'bg-gray-50/80'
               }`}>
                 <div className="text-center space-y-4">
-                  <h4 className={`text-2xl font-bold ${
+                  <h4 className={`text-xl md:text-2xl font-bold ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
                   }`}>
                     <BlurText isVisible={isPlaying}>{currentTrack.title}</BlurText>
                   </h4>
-                  <p className={`text-lg ${
+                  <p className={`text-base md:text-lg ${
                     isDarkMode ? 'text-white/70' : 'text-gray-600'
                   }`}>
                     <BlurText isVisible={isPlaying}>{currentTrack.artist}</BlurText>
                   </p>
                   
-                  <div className="mt-6">
+                  <div className="mt-4 md:mt-6">
                     <ElasticSlider
                       value={(progress / currentTrack.duration) * 100}
                       onChange={(value) => {}}
                       className="mb-3"
                     />
-                    <div className={`flex justify-between text-lg ${
+                    <div className={`flex justify-between text-base md:text-lg ${
                       isDarkMode ? 'text-white/50' : 'text-gray-500'
                     }`}>
                       <span>{Math.floor(progress / 60)}:{(progress % 60).toString().padStart(2, '0')}</span>
@@ -327,7 +327,7 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
               </GlareHover>
             )}
 
-            <div className="flex items-center justify-center space-x-8">
+            <div className="flex items-center justify-center space-x-6 md:space-x-8">
               <CircularButton 
                 icon={SkipBack} 
                 onClick={previous}
@@ -346,20 +346,20 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
               />
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
               <div className="flex items-center space-x-4">
-                <Volume2 className={`h-6 w-6 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`} />
+                <Volume2 className={`h-5 w-5 md:h-6 md:w-6 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`} />
                 <ElasticSlider
                   value={volume}
                   onChange={setVolume}
                   className="flex-1"
                 />
-                <span className={`text-lg font-bold min-w-12 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}>
+                <span className={`text-base md:text-lg font-bold min-w-12 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}>
                   {Math.round(volume)}%
                 </span>
               </div>
 
-              <div className="flex items-center justify-center space-x-8">
+              <div className="flex items-center justify-center space-x-6 md:space-x-8">
                 <CircularButton 
                   icon={Shuffle} 
                   onClick={toggleShuffle}
@@ -457,7 +457,7 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
             max={100}
             className="flex-1"
           />
-          <span className="text-sm text-gray-400 w-10">{volume}%</span>
+          <span className="text-sm text-gray-400 w-10">{Math.round(volume)}%</span>
         </div>
       </div>
 
@@ -484,3 +484,5 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
 };
 
 export default EnhancedAudioPlayer;
+
+}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -106,7 +105,7 @@ const WambuguHub = () => {
     { 
       icon: <Music size={20} />, 
       label: 'Audio', 
-      onClick: () => console.log('Audio Center')
+      onClick: () => setActiveView('audio')
     },
     { 
       icon: <Car size={20} />, 
@@ -134,14 +133,28 @@ const WambuguHub = () => {
     size?: 'sm' | 'md' | 'lg' | 'xl';
   }) => {
     const sizeClasses = {
-      sm: 'w-16 h-16',
-      md: 'w-20 h-20',
-      lg: 'w-24 h-24',
-      xl: 'w-28 h-28'
+      sm: 'w-14 h-14 sm:w-16 sm:h-16',
+      md: 'w-16 h-16 sm:w-20 sm:h-20',
+      lg: 'w-20 h-20 sm:w-24 sm:h-24',
+      xl: 'w-24 h-24 sm:w-28 sm:h-28'
+    };
+
+    const iconSizes = {
+      sm: 'h-5 w-5 sm:h-6 sm:w-6',
+      md: 'h-6 w-6 sm:h-7 sm:w-7',
+      lg: 'h-7 w-7 sm:h-8 sm:w-8',
+      xl: 'h-8 w-8 sm:h-9 sm:w-9'
+    };
+
+    const textSizes = {
+      sm: 'text-xs sm:text-sm',
+      md: 'text-sm sm:text-base',
+      lg: 'text-sm sm:text-base lg:text-lg',
+      xl: 'text-base sm:text-lg'
     };
 
     return (
-      <div className="flex flex-col items-center space-y-3">
+      <div className="flex flex-col items-center space-y-2 sm:space-y-3">
         <Button
           onClick={onClick}
           className={`
@@ -159,12 +172,12 @@ const WambuguHub = () => {
             }
           `}
         >
-          <Icon className={`h-8 w-8 ${active 
+          <Icon className={`${iconSizes[size]} ${active 
             ? (isDarkMode ? 'text-white' : 'text-purple-700') 
             : (isDarkMode ? 'text-white/80' : 'text-black/70')
           }`} />
         </Button>
-        <span className={`text-lg font-bold text-center max-w-20 leading-tight ${
+        <span className={`${textSizes[size]} font-bold text-center max-w-16 sm:max-w-20 leading-tight ${
           isDarkMode ? 'text-white/90' : 'text-black/80'
         }`}>
           {label}
@@ -190,14 +203,14 @@ const WambuguHub = () => {
           }`}>
             <div className="flex items-center justify-between max-w-6xl mx-auto">
               <div className="flex items-center space-x-4">
-                <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-2xl">
-                  <Car className="h-8 w-8 text-white" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-2xl">
+                  <Car className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
                 <div>
-                  <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <h1 className={`text-2xl sm:text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Car Mode
                   </h1>
-                  <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  <p className={`text-base sm:text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                     Voice-First Interface
                   </p>
                 </div>
@@ -205,9 +218,9 @@ const WambuguHub = () => {
               
               <Button 
                 onClick={toggleCarMode}
-                className="rounded-full text-lg px-6 py-3 transition-all duration-300 hover:scale-105 transform bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl"
+                className="rounded-full text-base sm:text-lg px-4 sm:px-6 py-2 sm:py-3 transition-all duration-300 hover:scale-105 transform bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg hover:shadow-xl"
               >
-                <Minimize2 className="h-5 w-5 mr-2" />
+                <Minimize2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Exit Car Mode
               </Button>
             </div>
@@ -236,7 +249,7 @@ const WambuguHub = () => {
 
   return (
     <AudioProvider>
-      <div className={`min-h-screen transition-all duration-700 relative overflow-hidden pb-24 ${
+      <div className={`min-h-screen transition-all duration-700 relative overflow-hidden pb-32 ${
         isDarkMode 
           ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-black text-white' 
           : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900'
@@ -255,14 +268,14 @@ const WambuguHub = () => {
         }`}>
           <div className="flex items-center justify-between max-w-6xl mx-auto">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                <Zap className="h-7 w-7 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                <Zap className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
               </div>
               <div>
-                <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                <h1 className={`text-xl sm:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   WAMBUGU Hub
                 </h1>
-                <p className={`text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   Smart Automation Assistant
                 </p>
               </div>
@@ -280,13 +293,13 @@ const WambuguHub = () => {
                     : 'hover:bg-gray-100 text-gray-600'
                 }`}
               >
-                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                {isDarkMode ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8 relative z-10 pb-20">
+        <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-6 md:space-y-8 relative z-10 pb-32">
           {/* Main Dashboard View */}
           {activeView === 'main' && (
             <>
@@ -299,7 +312,7 @@ const WambuguHub = () => {
                 <VoiceInterface isDarkMode={isDarkMode} />
               </Card>
 
-              {/* Quick Action Ring */}
+              {/* Quick Action Ring - Responsive */}
               <Card className={`p-6 md:p-10 border transition-all duration-500 ${
                 isDarkMode 
                   ? 'bg-white/5 border-white/10 hover:bg-white/8' 
@@ -313,27 +326,27 @@ const WambuguHub = () => {
                     Tap to activate modes and controls
                   </p>
                 </div>
-                <div className="flex items-center justify-center overflow-x-auto">
-                  <div className="grid grid-cols-3 gap-4 md:gap-12 items-center min-w-fit px-4">
+                <div className="flex justify-center overflow-x-auto px-4">
+                  <div className="grid grid-cols-3 gap-6 sm:gap-8 md:gap-12 lg:gap-16 items-center min-w-fit">
                     <CircularButton 
                       icon={Car} 
                       label="Car Mode" 
                       onClick={toggleCarMode}
                       active={isCarMode}
-                      size={typeof window !== 'undefined' && window.innerWidth < 768 ? 'md' : 'lg'}
+                      size="md"
                     />
                     <CircularButton 
                       icon={Activity} 
                       label="Automation" 
                       onClick={() => setActiveView('automation')}
                       active={activeView === 'automation'}
-                      size={typeof window !== 'undefined' && window.innerWidth < 768 ? 'md' : 'lg'}
+                      size="md"
                     />
                     <CircularButton 
                       icon={Home} 
                       label="Home Mode" 
                       onClick={() => console.log('Home mode activated')}
-                      size={typeof window !== 'undefined' && window.innerWidth < 768 ? 'md' : 'lg'}
+                      size="md"
                     />
                   </div>
                 </div>
@@ -345,8 +358,8 @@ const WambuguHub = () => {
                 <EnhancedAudioPlayer isDarkMode={isDarkMode} compact={true} />
               </div>
 
-              {/* Active Rules Summary */}
-              <Card className={`p-4 md:p-6 border transition-all duration-500 mb-20 ${
+              {/* Active Rules Summary with bottom padding for dock */}
+              <Card className={`p-4 md:p-6 border transition-all duration-500 mb-32 ${
                 isDarkMode 
                   ? 'bg-white/5 border-white/10 hover:bg-white/8' 
                   : 'bg-white/90 border-gray-200/50 hover:bg-white/95'
@@ -391,6 +404,33 @@ const WambuguHub = () => {
                 </div>
               </Card>
             </>
+          )}
+
+          {/* Audio View */}
+          {activeView === 'audio' && (
+            <Card className={`p-6 md:p-8 border transition-all duration-500 ${
+              isDarkMode 
+                ? 'bg-white/5 border-white/10 hover:bg-white/8' 
+                : 'bg-white/90 border-gray-200/50 hover:bg-white/95'
+            } backdrop-blur-md rounded-3xl shadow-2xl`}>
+              <div className="flex items-center justify-between mb-6 md:mb-8">
+                <h2 className={`text-2xl md:text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Audio Center
+                </h2>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActiveView('main')}
+                  className={`rounded-full text-base md:text-lg px-4 md:px-6 py-2 md:py-3 transition-all duration-300 hover:scale-105 transform ${
+                    isDarkMode 
+                      ? 'border-white/20 hover:bg-white/10 hover:border-white/30' 
+                      : 'border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Back to Dashboard
+                </Button>
+              </div>
+              <AudioPage isDarkMode={isDarkMode} />
+            </Card>
           )}
 
           {/* Automation Builder View */}
