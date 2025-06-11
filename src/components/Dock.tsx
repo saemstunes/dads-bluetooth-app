@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -44,11 +43,6 @@ function DockItem({
     [baseItemSize, magnification, baseItemSize]
   );
   const size = useSpring(targetSize, spring);
-
-  const maxHeight = useMemo(
-    () => Math.max(256, Number(magnification) + (Number(magnification) / 2) + 4),
-    [magnification]
-  );
 
   return (
     <motion.div
@@ -121,30 +115,47 @@ export default function Dock({
 }: any) {
   const mouseX = useMotionValue(Infinity);
   const isHovered = useMotionValue(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const maxHeight = useMemo(
-    () => Math.max(Number(dockHeight), Number(magnification) + (Number(magnification) / 2) + 4),
+    () => Math.max(Number(dockHeight), Number(magnification) + 20),
     [magnification, dockHeight]
   );
+
   const heightRow = useTransform(isHovered, [0, 1], [panelHeight, maxHeight]);
-  const height = useSpring(heightRow, spring);
+  const height = useSpring(heightRow, {
+    ...spring,
+    damping: 15 // Slightly higher damping to reduce oscillation
+  });
 
   return (
     <motion.div
-      style={{ height, scrollbarWidth: "none" }}
-      className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50"
+      ref={containerRef}
+      style={{ 
+        height,
+        minHeight: panelHeight // Ensure minimum height
+      }}
+      className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex items-end"
     >
       <motion.div
         onMouseMove={({ pageX }) => {
+          // Only update if we're actually hovering
+          if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            if (pageX >= rect.left && pageX <= rect.right) {
+              isHovered.set(1);
+              mouseX.set(pageX);
+            }
+          }
+        }}
+        onMouseEnter={() => {
           isHovered.set(1);
-          mouseX.set(pageX);
         }}
         onMouseLeave={() => {
           isHovered.set(0);
           mouseX.set(Infinity);
         }}
         className={`flex items-end gap-4 px-4 py-2 rounded-2xl backdrop-blur-md bg-gray-900/80 border border-white/20 shadow-2xl ${className}`}
-        style={{ height: panelHeight }}
         role="toolbar"
         aria-label="Application dock"
       >
@@ -165,5 +176,45 @@ export default function Dock({
         ))}
       </motion.div>
     </motion.div>
+  );
+}
+
+// Example usage component
+function DockExample() {
+  const items = [
+    {
+      label: "Home",
+      icon: "🏠",
+      onClick: () => console.log("Home clicked")
+    },
+    {
+      label: "Search",
+      icon: "🔍",
+      onClick: () => console.log("Search clicked")
+    },
+    {
+      label: "Messages",
+      icon: "💬",
+      onClick: () => console.log("Messages clicked")
+    },
+    {
+      label: "Settings",
+      icon: "⚙️",
+      onClick: () => console.log("Settings clicked")
+    },
+    {
+      label: "Profile",
+      icon: "👤",
+      onClick: () => console.log("Profile clicked")
+    }
+  ];
+
+  return (
+    <div className="h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900">
+      <div className="flex items-center justify-center h-full">
+        <p className="text-white text-xl">Hover over the dock at the bottom!</p>
+      </div>
+      <Dock items={items} />
+    </div>
   );
 }
