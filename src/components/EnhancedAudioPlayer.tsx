@@ -484,5 +484,3 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
 };
 
 export default EnhancedAudioPlayer;
-
-}
