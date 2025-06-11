@@ -28,7 +28,7 @@ import {
 
 const WambuguHub = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [activeView, setActiveView] = useState<'main' | 'automation' | 'settings'>('main');
+  const [activeView, setActiveView] = useState<'main' | 'automation' | 'settings' | 'audio'>('main');
   const [isCarMode, setIsCarMode] = useState(false);
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [automationRules, setAutomationRules] = useState([]);
@@ -409,29 +409,7 @@ const WambuguHub = () => {
 
           {/* Audio View */}
           {activeView === 'audio' && (
-            <Card className={`p-6 md:p-8 border transition-all duration-500 ${
-              isDarkMode 
-                ? 'bg-white/5 border-white/10 hover:bg-white/8' 
-                : 'bg-white/90 border-gray-200/50 hover:bg-white/95'
-            } backdrop-blur-md rounded-3xl shadow-2xl`}>
-              <div className="flex items-center justify-between mb-6 md:mb-8">
-                <h2 className={`text-2xl md:text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Audio Center
-                </h2>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setActiveView('main')}
-                  className={`rounded-full text-base md:text-lg px-4 md:px-6 py-2 md:py-3 transition-all duration-300 hover:scale-105 transform ${
-                    isDarkMode 
-                      ? 'border-white/20 hover:bg-white/10 hover:border-white/30' 
-                      : 'border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  Back to Dashboard
-                </Button>
-              </div>
-              <AudioPage isDarkMode={isDarkMode} />
-            </Card>
+            <AudioPage isDarkMode={isDarkMode} />
           )}
 
           {/* Automation Builder View */}
@@ -505,3 +483,5 @@ const WambuguHub = () => {
 };
 
 export default WambuguHub;
+
+}
