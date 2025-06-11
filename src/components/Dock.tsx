@@ -35,7 +35,7 @@ function DockItem({
       x: 0,
       width: baseItemSize,
     };
-    return val - rect.x - baseItemSize / 2;
+    return val - rect.x - rect.width / 2;
   });
 
   const targetSize = useTransform(
@@ -58,7 +58,7 @@ function DockItem({
       onBlur={() => isHovered.set(0)}
       onClick={onClick}
       className={`relative flex items-center justify-center rounded-2xl backdrop-blur-md border transition-all duration-300 cursor-pointer outline-none ${
-        className || 'bg-white/10 border-white/20 hover:bg-white/20 hover:border-white/40 shadow-lg hover:shadow-xl'
+        className || 'bg-gray-900/80 border-white/20 hover:bg-gray-800/90 hover:border-white/40 shadow-lg hover:shadow-xl'
       }`}
       tabIndex={0}
       role="button"

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -134,28 +135,28 @@ const WambuguHub = () => {
     size?: 'sm' | 'md' | 'lg' | 'xl';
   }) => {
     const sizeClasses = {
-      sm: 'w-14 h-14 sm:w-16 sm:h-16',
-      md: 'w-16 h-16 sm:w-20 sm:h-20',
-      lg: 'w-20 h-20 sm:w-24 sm:h-24',
-      xl: 'w-24 h-24 sm:w-28 sm:h-28'
+      sm: 'w-12 h-12 sm:w-14 sm:h-14',
+      md: 'w-14 h-14 sm:w-16 sm:h-16',
+      lg: 'w-16 h-16 sm:w-20 sm:h-20',
+      xl: 'w-20 h-20 sm:w-24 sm:h-24'
     };
 
     const iconSizes = {
-      sm: 'h-5 w-5 sm:h-6 sm:w-6',
-      md: 'h-6 w-6 sm:h-7 sm:w-7',
-      lg: 'h-7 w-7 sm:h-8 sm:w-8',
-      xl: 'h-8 w-8 sm:h-9 sm:w-9'
+      sm: 'h-4 w-4 sm:h-5 sm:w-5',
+      md: 'h-5 w-5 sm:h-6 sm:w-6',
+      lg: 'h-6 w-6 sm:h-7 sm:w-7',
+      xl: 'h-7 w-7 sm:h-8 sm:w-8'
     };
 
     const textSizes = {
-      sm: 'text-xs sm:text-sm',
-      md: 'text-sm sm:text-base',
-      lg: 'text-sm sm:text-base lg:text-lg',
-      xl: 'text-base sm:text-lg'
+      sm: 'text-xs',
+      md: 'text-sm',
+      lg: 'text-sm sm:text-base',
+      xl: 'text-base'
     };
 
     return (
-      <div className="flex flex-col items-center space-y-2 sm:space-y-3">
+      <div className="flex flex-col items-center space-y-2">
         <Button
           onClick={onClick}
           className={`
@@ -178,7 +179,7 @@ const WambuguHub = () => {
             : (isDarkMode ? 'text-white/80' : 'text-black/70')
           }`} />
         </Button>
-        <span className={`${textSizes[size]} font-bold text-center max-w-16 sm:max-w-20 leading-tight ${
+        <span className={`${textSizes[size]} font-bold text-center max-w-16 leading-tight ${
           isDarkMode ? 'text-white/90' : 'text-black/80'
         }`}>
           {label}
@@ -328,7 +329,7 @@ const WambuguHub = () => {
                   </p>
                 </div>
                 <div className="flex justify-center overflow-x-auto px-4">
-                  <div className="grid grid-cols-3 gap-6 sm:gap-8 md:gap-12 lg:gap-16 items-center min-w-fit">
+                  <div className="grid grid-cols-3 gap-4 sm:gap-6 md:gap-8 lg:gap-12 items-center min-w-fit">
                     <CircularButton 
                       icon={Car} 
                       label="Car Mode" 
@@ -483,5 +484,3 @@ const WambuguHub = () => {
 };
 
 export default WambuguHub;
-
-}
