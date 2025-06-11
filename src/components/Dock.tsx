@@ -17,8 +17,6 @@ import {
   useState,
 } from "react";
 
-import "./Dock.css";
-
 function DockItem({
   children,
   className = "",
@@ -29,7 +27,7 @@ function DockItem({
   magnification,
   baseItemSize,
 }: any) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef(null);
   const isHovered = useMotionValue(0);
 
   const mouseDistance = useTransform(mouseX, (val) => {
@@ -76,10 +74,10 @@ function DockLabel({ children, className = "", ...rest }: any) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = isHovered?.on?.("change", (latest: number) => {
+    const unsubscribe = isHovered.on("change", (latest: number) => {
       setIsVisible(latest === 1);
     });
-    return () => unsubscribe?.();
+    return () => unsubscribe();
   }, [isHovered]);
 
   return (
@@ -119,47 +117,117 @@ export default function Dock({
   const isHovered = useMotionValue(0);
 
   const maxHeight = useMemo(
-    () => Math.max(Number(dockHeight), Number(magnification) + Number(magnification) / 2 + 4),
+    () => Math.max(dockHeight, magnification + magnification / 2 + 4),
     [magnification, dockHeight]
   );
-  const heightRow = useTransform(isHovered, [0, 1], [Number(panelHeight), maxHeight]);
+  const heightRow = useTransform(isHovered, [0, 1], [panelHeight, maxHeight]);
   const height = useSpring(heightRow, spring);
 
   return (
-    <motion.div
-      style={{ height, scrollbarWidth: "none" }}
-      className="dock-outer"
-    >
+    <>
+      <style jsx>{`
+        .dock-outer {
+          margin: 0 0.5rem;
+          display: flex;
+          max-width: 100%;
+          align-items: center;
+        }
+
+        .dock-panel {
+          position: fixed;
+          bottom: 0.5rem;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          align-items: flex-end;
+          width: fit-content;
+          gap: 1rem;
+          border-radius: 1rem;
+          background: rgba(6, 0, 16, 0.9);
+          border: 1px solid rgba(34, 34, 34, 0.8);
+          padding: 0 0.5rem 0.5rem;
+          backdrop-filter: blur(20px);
+          z-index: 50;
+        }
+
+        .dock-item {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          background: rgba(6, 0, 16, 0.8);
+          border: 1px solid rgba(34, 34, 34, 0.6);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          cursor: pointer;
+          outline: none;
+          transition: all 0.3s ease;
+        }
+
+        .dock-item:hover {
+          background: rgba(6, 0, 16, 0.9);
+          border-color: rgba(34, 34, 34, 0.8);
+        }
+
+        .dock-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+        }
+
+        .dock-label {
+          position: absolute;
+          top: -1.5rem;
+          left: 50%;
+          width: fit-content;
+          white-space: pre;
+          border-radius: 0.375rem;
+          border: 1px solid rgba(34, 34, 34, 0.6);
+          background: rgba(6, 0, 16, 0.9);
+          padding: 0.125rem 0.5rem;
+          font-size: 0.75rem;
+          color: #fff;
+          transform: translateX(-50%);
+          backdrop-filter: blur(10px);
+        }
+      `}</style>
       <motion.div
-        onMouseMove={({ pageX }) => {
-          isHovered.set(1);
-          mouseX.set(pageX);
-        }}
-        onMouseLeave={() => {
-          isHovered.set(0);
-          mouseX.set(Infinity);
-        }}
-        className={`dock-panel ${className}`}
-        style={{ height: Number(panelHeight) }}
-        role="toolbar"
-        aria-label="Application dock"
+        style={{ height, scrollbarWidth: "none" }}
+        className="dock-outer"
       >
-        {items.map((item: any, index: number) => (
-          <DockItem
-            key={index}
-            onClick={item.onClick}
-            className={item.className}
-            mouseX={mouseX}
-            spring={spring}
-            distance={distance}
-            magnification={magnification}
-            baseItemSize={baseItemSize}
-          >
-            <DockIcon>{item.icon}</DockIcon>
-            <DockLabel>{item.label}</DockLabel>
-          </DockItem>
-        ))}
+        <motion.div
+          onMouseMove={({ pageX }) => {
+            isHovered.set(1);
+            mouseX.set(pageX);
+          }}
+          onMouseLeave={() => {
+            isHovered.set(0);
+            mouseX.set(Infinity);
+          }}
+          className={`dock-panel ${className}`}
+          style={{ height: panelHeight }}
+          role="toolbar"
+          aria-label="Application dock"
+        >
+          {items.map((item: any, index: number) => (
+            <DockItem
+              key={index}
+              onClick={item.onClick}
+              className={item.className}
+              mouseX={mouseX}
+              spring={spring}
+              distance={distance}
+              magnification={magnification}
+              baseItemSize={baseItemSize}
+            >
+              <DockIcon>{item.icon}</DockIcon>
+              <DockLabel>{item.label}</DockLabel>
+            </DockItem>
+          ))}
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </>
   );
 }
