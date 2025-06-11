@@ -9,6 +9,7 @@ import AutomationBuilder from './AutomationBuilder';
 import StatusIndicators from './StatusIndicators';
 import Settings from './Settings';
 import Dock from './Dock';
+import AudioPage from './AudioPage';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -504,3 +505,5 @@ const WambuguHub = () => {
 };
 
 export default WambuguHub;
+
+}
