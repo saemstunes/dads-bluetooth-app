@@ -36,6 +36,7 @@ const WambuguHub = () => {
   // Apply theme class to document with smooth transition
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode);
+    document.documentElement.classList.toggle('light', !isDarkMode);
     document.body.style.transition = 'background-color 0.5s ease, color 0.5s ease';
   }, [isDarkMode]);
 
@@ -91,30 +92,30 @@ const WambuguHub = () => {
     }
   };
 
-  // Dock items
+  // Dock items with correct Lucide icons
   const dockItems = [
     { 
-      icon: <Home size={20} />, 
+      icon: <Home size={18} />, 
       label: 'Home', 
       onClick: () => setActiveView('main')
     },
     { 
-      icon: <Activity size={20} />, 
+      icon: <Activity size={18} />, 
       label: 'Automation', 
       onClick: () => setActiveView('automation')
     },
     { 
-      icon: <Music size={20} />, 
+      icon: <Music size={18} />, 
       label: 'Audio', 
       onClick: () => setActiveView('audio')
     },
     { 
-      icon: <Car size={20} />, 
+      icon: <Car size={18} />, 
       label: 'Car Mode', 
       onClick: toggleCarMode
     },
     { 
-      icon: <SettingsIcon size={20} />, 
+      icon: <SettingsIcon size={18} />, 
       label: 'Settings', 
       onClick: () => setActiveView('settings')
     },
@@ -252,8 +253,8 @@ const WambuguHub = () => {
     <AudioProvider>
       <div className={`min-h-screen transition-all duration-700 relative overflow-hidden pb-32 ${
         isDarkMode 
-          ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-black text-white' 
-          : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900'
+          ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-black text-white dark' 
+          : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 text-gray-900 light'
       }`}>
         {/* Silk Background Effect */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
@@ -483,3 +484,5 @@ const WambuguHub = () => {
 };
 
 export default WambuguHub;
+
+}

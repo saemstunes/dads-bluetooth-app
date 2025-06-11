@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -15,6 +16,8 @@ import {
   useRef,
   useState,
 } from "react";
+
+import "./Dock.css";
 
 function DockItem({
   children,
@@ -34,7 +37,7 @@ function DockItem({
       x: 0,
       width: baseItemSize,
     };
-    return val - rect.x - rect.width / 2;
+    return val - rect.x - baseItemSize / 2;
   });
 
   const targetSize = useTransform(
@@ -56,9 +59,7 @@ function DockItem({
       onFocus={() => isHovered.set(1)}
       onBlur={() => isHovered.set(0)}
       onClick={onClick}
-      className={`relative flex items-center justify-center rounded-2xl backdrop-blur-md border transition-all duration-300 cursor-pointer outline-none ${
-        className || 'bg-gray-900/80 border-white/20 hover:bg-gray-800/90 hover:border-white/40 shadow-lg hover:shadow-xl'
-      }`}
+      className={`dock-item ${className}`}
       tabIndex={0}
       role="button"
       aria-haspopup="true"
@@ -89,8 +90,9 @@ function DockLabel({ children, className = "", ...rest }: any) {
           animate={{ opacity: 1, y: -10 }}
           exit={{ opacity: 0, y: 0 }}
           transition={{ duration: 0.2 }}
-          className={`absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full mb-2 px-3 py-1 bg-gray-900/90 text-white text-sm rounded-lg backdrop-blur-md border border-white/20 whitespace-nowrap ${className}`}
+          className={`dock-label ${className}`}
           role="tooltip"
+          style={{ x: "-50%" }}
         >
           {children}
         </motion.div>
@@ -100,7 +102,7 @@ function DockLabel({ children, className = "", ...rest }: any) {
 }
 
 function DockIcon({ children, className = "" }: any) {
-  return <div className={`flex items-center justify-center text-white/80 ${className}`}>{children}</div>;
+  return <div className={`dock-icon ${className}`}>{children}</div>;
 }
 
 export default function Dock({
@@ -115,47 +117,30 @@ export default function Dock({
 }: any) {
   const mouseX = useMotionValue(Infinity);
   const isHovered = useMotionValue(0);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const maxHeight = useMemo(
-    () => Math.max(Number(dockHeight), Number(magnification) + 20),
+    () => Math.max(Number(dockHeight), Number(magnification) + Number(magnification) / 2 + 4),
     [magnification, dockHeight]
   );
-
-  const heightRow = useTransform(isHovered, [0, 1], [panelHeight, maxHeight]);
-  const height = useSpring(heightRow, {
-    ...spring,
-    damping: 15 // Slightly higher damping to reduce oscillation
-  });
+  const heightRow = useTransform(isHovered, [0, 1], [Number(panelHeight), maxHeight]);
+  const height = useSpring(heightRow, spring);
 
   return (
     <motion.div
-      ref={containerRef}
-      style={{ 
-        height,
-        minHeight: panelHeight // Ensure minimum height
-      }}
-      className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 flex items-end"
+      style={{ height, scrollbarWidth: "none" }}
+      className="dock-outer"
     >
       <motion.div
         onMouseMove={({ pageX }) => {
-          // Only update if we're actually hovering
-          if (containerRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            if (pageX >= rect.left && pageX <= rect.right) {
-              isHovered.set(1);
-              mouseX.set(pageX);
-            }
-          }
-        }}
-        onMouseEnter={() => {
           isHovered.set(1);
+          mouseX.set(pageX);
         }}
         onMouseLeave={() => {
           isHovered.set(0);
           mouseX.set(Infinity);
         }}
-        className={`flex items-end gap-4 px-4 py-2 rounded-2xl backdrop-blur-md bg-gray-900/80 border border-white/20 shadow-2xl ${className}`}
+        className={`dock-panel ${className}`}
+        style={{ height: Number(panelHeight) }}
         role="toolbar"
         aria-label="Application dock"
       >
@@ -176,45 +161,5 @@ export default function Dock({
         ))}
       </motion.div>
     </motion.div>
-  );
-}
-
-// Example usage component
-function DockExample() {
-  const items = [
-    {
-      label: "Home",
-      icon: "🏠",
-      onClick: () => console.log("Home clicked")
-    },
-    {
-      label: "Search",
-      icon: "🔍",
-      onClick: () => console.log("Search clicked")
-    },
-    {
-      label: "Messages",
-      icon: "💬",
-      onClick: () => console.log("Messages clicked")
-    },
-    {
-      label: "Settings",
-      icon: "⚙️",
-      onClick: () => console.log("Settings clicked")
-    },
-    {
-      label: "Profile",
-      icon: "👤",
-      onClick: () => console.log("Profile clicked")
-    }
-  ];
-
-  return (
-    <div className="h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900">
-      <div className="flex items-center justify-center h-full">
-        <p className="text-white text-xl">Hover over the dock at the bottom!</p>
-      </div>
-      <Dock items={items} />
-    </div>
   );
 }
