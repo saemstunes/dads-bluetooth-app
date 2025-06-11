@@ -505,5 +505,3 @@ const WambuguHub = () => {
 };
 
 export default WambuguHub;
-
-}
