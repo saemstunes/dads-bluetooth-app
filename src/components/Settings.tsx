@@ -107,7 +107,7 @@ const Settings: React.FC<SettingsProps> = ({ isDarkMode }) => {
     max?: number;
     step?: number;
   }) => (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex justify-between items-center">
         <Label className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{label}</Label>
         <Badge variant="outline" className="text-sm">
@@ -120,7 +120,8 @@ const Settings: React.FC<SettingsProps> = ({ isDarkMode }) => {
         min={min}
         max={max}
         step={step}
-        className="w-full"
+        className="w-full touch-manipulation"
+        style={{ touchAction: 'manipulation' }}
       />
     </div>
   );
@@ -131,8 +132,8 @@ const Settings: React.FC<SettingsProps> = ({ isDarkMode }) => {
     onChange: (checked: boolean) => void;
     description?: string;
   }) => (
-    <div className="flex items-center justify-between">
-      <div className="space-y-1">
+    <div className="flex items-center justify-between py-2">
+      <div className="space-y-1 flex-1">
         <Label className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{label}</Label>
         {description && (
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -140,7 +141,11 @@ const Settings: React.FC<SettingsProps> = ({ isDarkMode }) => {
           </p>
         )}
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
+      <Switch 
+        checked={checked} 
+        onCheckedChange={onChange}
+        className="ml-4"
+      />
     </div>
   );
 

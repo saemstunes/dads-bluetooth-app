@@ -158,8 +158,18 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({ automationRules, 
       return;
     }
 
-    // Here you would save to your backend
-    console.log('Saving automation rule:', newRule);
+    // Create a complete rule object
+    const completeRule: AutomationRule = {
+      id: Date.now().toString(),
+      name: newRule.name,
+      enabled: newRule.enabled || true,
+      execution_count: 0,
+      triggers: newRule.triggers || [],
+      actions: newRule.actions || [],
+      conditions: newRule.conditions || []
+    };
+
+    console.log('Saving automation rule:', completeRule);
     
     setIsCreating(false);
     setNewRule({
@@ -169,6 +179,20 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({ automationRules, 
       actions: [],
       conditions: []
     });
+  };
+
+  const removeTrigger = (triggerId: string) => {
+    setNewRule(prev => ({
+      ...prev,
+      triggers: prev.triggers?.filter(trigger => trigger.id !== triggerId) || []
+    }));
+  };
+
+  const removeAction = (actionId: string) => {
+    setNewRule(prev => ({
+      ...prev,
+      actions: prev.actions?.filter(action => action.id !== actionId) || []
+    }));
   };
 
   const TriggerCard = ({ trigger, onRemove }: { trigger: Trigger, onRemove: () => void }) => {
@@ -307,14 +331,14 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({ automationRules, 
             <div>
               <Label>Rule Name</Label>
               <Input
-                value={newRule.name}
+                value={newRule.name || ''}
                 onChange={(e) => setNewRule(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Enter automation name"
               />
             </div>
             <div className="flex items-center gap-2">
               <Switch
-                checked={newRule.enabled}
+                checked={newRule.enabled || true}
                 onCheckedChange={(checked) => setNewRule(prev => ({ ...prev, enabled: checked }))}
               />
               <Label>Enable this automation</Label>
@@ -355,16 +379,11 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({ automationRules, 
               <h5 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Added Triggers
               </h5>
-              {newRule.triggers.map((trigger, index) => (
+              {newRule.triggers.map((trigger) => (
                 <TriggerCard
                   key={trigger.id}
                   trigger={trigger}
-                  onRemove={() => {
-                    setNewRule(prev => ({
-                      ...prev,
-                      triggers: prev.triggers?.filter((_, i) => i !== index)
-                    }));
-                  }}
+                  onRemove={() => removeTrigger(trigger.id)}
                 />
               ))}
             </div>
@@ -404,16 +423,11 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({ automationRules, 
               <h5 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 Added Actions
               </h5>
-              {newRule.actions.map((action, index) => (
+              {newRule.actions.map((action) => (
                 <ActionCard
                   key={action.id}
                   action={action}
-                  onRemove={() => {
-                    setNewRule(prev => ({
-                      ...prev,
-                      actions: prev.actions?.filter((_, i) => i !== index)
-                    }));
-                  }}
+                  onRemove={() => removeAction(action.id)}
                 />
               ))}
             </div>
@@ -466,7 +480,6 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({ automationRules, 
                   Triggers
                 </h5>
                 <div className="space-y-2">
-                  {/* Example triggers - you would map actual rule triggers here */}
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4 text-blue-500" />
                     <span>Every weekday at 8:00 AM</span>
@@ -479,7 +492,6 @@ const AutomationBuilder: React.FC<AutomationBuilderProps> = ({ automationRules, 
                   Actions
                 </h5>
                 <div className="space-y-2">
-                  {/* Example actions - you would map actual rule actions here */}
                   <div className="flex items-center gap-2 text-sm">
                     <Volume2 className="h-4 w-4 text-green-500" />
                     <span>Start morning playlist</span>

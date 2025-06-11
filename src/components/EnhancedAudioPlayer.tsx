@@ -33,13 +33,13 @@ const ElasticSlider: React.FC<ElasticSliderProps> = ({
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    onChange(Math.round(localValue)); // Ensure integer value
+    onChange(Math.round(localValue));
   };
 
   const updateValue = (e: MouseEvent | React.MouseEvent) => {
     const rect = (e.target as HTMLElement).getBoundingClientRect();
     const percentage = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const newValue = Math.round(percentage * max); // Round to nearest integer
+    const newValue = Math.round(percentage * max);
     setLocalValue(newValue);
   };
 
@@ -56,7 +56,7 @@ const ElasticSlider: React.FC<ElasticSliderProps> = ({
 
   useEffect(() => {
     if (!isDragging) {
-      setLocalValue(Math.round(value)); // Always use integer values
+      setLocalValue(Math.round(value));
     }
   }, [value, isDragging]);
 
@@ -143,7 +143,7 @@ const ClickSpark: React.FC<{ children: React.ReactNode; onClick?: () => void }> 
 const MiniPlayer: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => {
   const { currentTrack, isPlaying, play, pause, next, previous } = useAudio();
 
-  if (!currentTrack || !isPlaying) return null;
+  if (!currentTrack) return null;
 
   return (
     <Card className={`fixed bottom-24 left-4 right-4 p-3 transition-all duration-500 z-40 ${
@@ -312,7 +312,7 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
                   
                   <div className="mt-4 md:mt-6">
                     <ElasticSlider
-                      value={(progress / currentTrack.duration) * 100}
+                      value={Math.round((progress / currentTrack.duration) * 100)}
                       onChange={(value) => {}}
                       className="mb-3"
                     />
@@ -350,7 +350,7 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
               <div className="flex items-center space-x-4">
                 <Volume2 className={`h-5 w-5 md:h-6 md:w-6 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`} />
                 <ElasticSlider
-                  value={volume}
+                  value={Math.round(volume)}
                   onChange={setVolume}
                   className="flex-1"
                 />
@@ -378,7 +378,7 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
             </div>
           </div>
         </Card>
-        <MiniPlayer isDarkMode={isDarkMode} />
+        {isPlaying && <MiniPlayer isDarkMode={isDarkMode} />}
       </>
     );
   }
@@ -484,3 +484,5 @@ const EnhancedAudioPlayer: React.FC<{ isDarkMode: boolean; compact?: boolean }> 
 };
 
 export default EnhancedAudioPlayer;
+
+}
