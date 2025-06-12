@@ -1,36 +1,58 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
   Plus, 
+  Settings, 
   Play, 
   Pause, 
-  Settings, 
   Trash2, 
-  Zap, 
-  Bluetooth,
   Clock,
   MapPin,
+  Bluetooth,
   Volume2,
-  Car,
-  Home
+  Smartphone,
+  Lightbulb,
+  Thermometer,
+  Battery,
+  Wifi,
+  Calendar,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface AutomationRule {
   id: string;
   name: string;
-  description?: string;
   enabled: boolean;
-  triggers: any[];
-  conditions: any[];
-  actions: any[];
   execution_count: number;
+  triggers: Trigger[];
+  actions: Action[];
+  conditions?: Condition[];
+}
+
+interface Trigger {
+  id: string;
+  type: 'time' | 'location' | 'device' | 'sensor' | 'app' | 'voice';
+  config: any;
+}
+
+interface Action {
+  id: string;
+  type: 'audio' | 'device' | 'notification' | 'app' | 'voice';
+  config: any;
+}
+
+interface Condition {
+  id: string;
+  type: 'time' | 'location' | 'device' | 'weather';
+  config: any;
 }
 
 interface AutomationBuilderProps {
@@ -38,316 +60,450 @@ interface AutomationBuilderProps {
   isDarkMode: boolean;
 }
 
-const AutomationBuilder: React.FC<AutomationBuilderProps> = ({ 
-  automationRules, 
-  isDarkMode 
-}) => {
+const AutomationBuilder: React.FC<AutomationBuilderProps> = ({ automationRules, isDarkMode }) => {
+  const [selectedRule, setSelectedRule] = useState<AutomationRule | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [newRule, setNewRule] = useState({
+  const [newRule, setNewRule] = useState<Partial<AutomationRule>>({
     name: '',
-    description: '',
+    enabled: true,
     triggers: [],
-    conditions: [],
-    actions: []
+    actions: [],
+    conditions: []
   });
-  const { toast } = useToast();
 
   const triggerTypes = [
-    { id: 'bluetooth_connect', name: 'Bluetooth Device Connects', icon: Bluetooth, color: 'blue' },
-    { id: 'time_schedule', name: 'Time/Schedule', icon: Clock, color: 'green' },
-    { id: 'location_enter', name: 'Enter Location', icon: MapPin, color: 'purple' },
-    { id: 'voice_command', name: 'Voice Command', icon: Volume2, color: 'orange' }
+    { id: 'time', name: 'Time', icon: Clock, description: 'Trigger at specific times' },
+    { id: 'location', name: 'Location', icon: MapPin, description: 'Trigger when entering/leaving locations' },
+    { id: 'device', name: 'Device', icon: Bluetooth, description: 'Trigger when devices connect/disconnect' },
+    { id: 'sensor', name: 'Sensor', icon: Thermometer, description: 'Trigger on sensor readings' },
+    { id: 'app', name: 'App Event', icon: Smartphone, description: 'Trigger on app events' },
+    { id: 'voice', name: 'Voice Command', icon: Volume2, description: 'Trigger on voice commands' }
   ];
 
   const actionTypes = [
-    { id: 'connect_device', name: 'Connect Device', icon: Bluetooth, color: 'blue' },
-    { id: 'play_audio', name: 'Play Audio', icon: Volume2, color: 'purple' },
-    { id: 'car_mode', name: 'Enable Car Mode', icon: Car, color: 'green' },
-    { id: 'home_mode', name: 'Enable Home Mode', icon: Home, color: 'orange' }
+    { id: 'audio', name: 'Audio Control', icon: Volume2, description: 'Control audio playback' },
+    { id: 'device', name: 'Device Control', icon: Lightbulb, description: 'Control connected devices' },
+    { id: 'notification', name: 'Send Notification', icon: Smartphone, description: 'Send push notifications' },
+    { id: 'app', name: 'App Action', icon: Smartphone, description: 'Perform app actions' },
+    { id: 'voice', name: 'Voice Response', icon: Volume2, description: 'Respond with voice' }
   ];
 
-  const createAutomationRule = async () => {
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to create automation rules",
-          variant: "destructive",
-        });
-        return;
-      }
+  const createTrigger = (type: string) => {
+    const baseConfig = getTriggerConfig(type);
+    const newTrigger: Trigger = {
+      id: Date.now().toString(),
+      type: type as any,
+      config: baseConfig
+    };
+    
+    setNewRule(prev => ({
+      ...prev,
+      triggers: [...(prev.triggers || []), newTrigger]
+    }));
+  };
 
-      const { error } = await supabase
-        .from('automation_rules')
-        .insert({
-          name: newRule.name || 'New Automation Rule',
-          description: newRule.description,
-          triggers: newRule.triggers,
-          conditions: newRule.conditions,
-          actions: newRule.actions,
-          enabled: true,
-          user_id: user.id
-        });
+  const createAction = (type: string) => {
+    const baseConfig = getActionConfig(type);
+    const newAction: Action = {
+      id: Date.now().toString(),
+      type: type as any,
+      config: baseConfig
+    };
+    
+    setNewRule(prev => ({
+      ...prev,
+      actions: [...(prev.actions || []), newAction]
+    }));
+  };
 
-      if (error) throw error;
-
-      toast({
-        title: "Automation Rule Created",
-        description: `Successfully created "${newRule.name}"`,
-      });
-
-      setIsCreating(false);
-      setNewRule({ name: '', description: '', triggers: [], conditions: [], actions: [] });
-
-    } catch (error) {
-      console.error('Error creating automation rule:', error);
-      toast({
-        title: "Creation Failed",
-        description: "Could not create automation rule",
-        variant: "destructive",
-      });
+  const getTriggerConfig = (type: string) => {
+    switch (type) {
+      case 'time':
+        return { time: '09:00', days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] };
+      case 'location':
+        return { latitude: 0, longitude: 0, radius: 100, entering: true };
+      case 'device':
+        return { deviceType: 'bluetooth', deviceName: '', action: 'connect' };
+      case 'sensor':
+        return { sensorType: 'battery', operator: 'less_than', value: 20 };
+      case 'app':
+        return { appName: '', eventType: 'opened' };
+      case 'voice':
+        return { phrase: 'activate car mode', exact: false };
+      default:
+        return {};
     }
   };
 
-  const toggleRule = async (ruleId: string, enabled: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('automation_rules')
-        .update({ enabled: !enabled })
-        .eq('id', ruleId);
-
-      if (error) throw error;
-
-      toast({
-        title: enabled ? "Rule Disabled" : "Rule Enabled",
-        description: "Automation rule status updated",
-      });
-
-    } catch (error) {
-      console.error('Error toggling rule:', error);
+  const getActionConfig = (type: string) => {
+    switch (type) {
+      case 'audio':
+        return { action: 'play', volume: 70, source: 'playlist' };
+      case 'device':
+        return { deviceType: 'lights', action: 'turn_on', brightness: 100 };
+      case 'notification':
+        return { title: 'Automation Triggered', message: 'Your automation rule has been executed', priority: 'normal' };
+      case 'app':
+        return { appName: '', action: 'open' };
+      case 'voice':
+        return { message: 'Automation completed successfully', voice: 'default' };
+      default:
+        return {};
     }
   };
 
-  const CircularTriggerAction = ({ item, type, onClick }) => {
-    const Icon = item.icon;
+  const saveRule = () => {
+    if (!newRule.name || !newRule.triggers?.length || !newRule.actions?.length) {
+      alert('Please provide a name, at least one trigger, and one action');
+      return;
+    }
+
+    // Create a complete rule object
+    const completeRule: AutomationRule = {
+      id: Date.now().toString(),
+      name: newRule.name,
+      enabled: newRule.enabled || true,
+      execution_count: 0,
+      triggers: newRule.triggers || [],
+      actions: newRule.actions || [],
+      conditions: newRule.conditions || []
+    };
+
+    console.log('Saving automation rule:', completeRule);
+    
+    setIsCreating(false);
+    setNewRule({
+      name: '',
+      enabled: true,
+      triggers: [],
+      actions: [],
+      conditions: []
+    });
+  };
+
+  const removeTrigger = (triggerId: string) => {
+    setNewRule(prev => ({
+      ...prev,
+      triggers: prev.triggers?.filter(trigger => trigger.id !== triggerId) || []
+    }));
+  };
+
+  const removeAction = (actionId: string) => {
+    setNewRule(prev => ({
+      ...prev,
+      actions: prev.actions?.filter(action => action.id !== actionId) || []
+    }));
+  };
+
+  const TriggerCard = ({ trigger, onRemove }: { trigger: Trigger, onRemove: () => void }) => {
+    const triggerType = triggerTypes.find(t => t.id === trigger.type);
+    const Icon = triggerType?.icon || Clock;
+
     return (
-      <div className="flex flex-col items-center space-y-2">
-        <Button
-          onClick={() => onClick(item.id)}
-          className={`
-            w-14 h-14 rounded-full p-0 border-2 transition-all duration-300 hover:scale-105 transform hover:shadow-lg
-            ${isDarkMode 
-              ? `bg-${item.color}-500/10 border-${item.color}-500/30 hover:bg-${item.color}-500/20 hover:border-${item.color}-400/50`
-              : `bg-${item.color}-100 border-${item.color}-300 hover:bg-${item.color}-200 hover:border-${item.color}-400`
-            }
-          `}
-        >
-          <Icon className={`h-5 w-5 ${isDarkMode ? `text-${item.color}-400` : `text-${item.color}-600`}`} />
-        </Button>
-        <span className={`text-xs font-medium text-center max-w-16 leading-tight ${
-          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-        }`}>
-          {item.name}
-        </span>
-      </div>
+      <Card className={`p-4 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Icon className="h-4 w-4 text-blue-500" />
+            <span className="font-medium">{triggerType?.name}</span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onRemove}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="space-y-2 text-sm">
+          {renderTriggerConfig(trigger)}
+        </div>
+      </Card>
     );
   };
 
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Quick Rule Templates */}
-      <Card className={`p-4 border transition-all duration-300 ${
-        isDarkMode 
-          ? 'bg-white/5 border-white/10 hover:bg-white/8' 
-          : 'bg-white/80 border-gray-200/50 hover:bg-white/90'
-      } backdrop-blur-md rounded-2xl shadow-lg`}>
-        <h4 className={`font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          Quick Templates
-        </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {[
-            { name: 'Car Connect', desc: 'Auto-connect when car detected', triggers: ['bluetooth'], actions: ['connect', 'audio'] },
-            { name: 'Home Arrival', desc: 'Enable home mode at location', triggers: ['location'], actions: ['home_mode'] },
-            { name: 'Sleep Mode', desc: 'Night time automation', triggers: ['time'], actions: ['volume_down'] }
-          ].map((template, index) => (
-            <Button
-              key={index}
-              variant="outline"
-              className={`p-3 h-auto text-left transition-all duration-300 hover:scale-105 transform rounded-xl ${
-                isDarkMode 
-                  ? 'border-white/20 hover:bg-white/10 hover:border-white/30' 
-                  : 'border-gray-300 hover:bg-gray-50 hover:border-gray-400'
-              }`}
-              onClick={() => console.log(`Create template: ${template.name}`)}
-            >
-              <div>
-                <p className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {template.name}
-                </p>
-                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {template.desc}
-                </p>
-              </div>
-            </Button>
-          ))}
-        </div>
-      </Card>
+  const ActionCard = ({ action, onRemove }: { action: Action, onRemove: () => void }) => {
+    const actionType = actionTypes.find(a => a.id === action.type);
+    const Icon = actionType?.icon || Lightbulb;
 
-      {/* Create New Rule */}
-      <Card className={`p-4 border transition-all duration-300 ${
-        isDarkMode 
-          ? 'bg-white/5 border-white/10 hover:bg-white/8' 
-          : 'bg-white/80 border-gray-200/50 hover:bg-white/90'
-      } backdrop-blur-md rounded-2xl shadow-lg`}>
-        <div className="flex items-center justify-between mb-4">
-          <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            Create Automation Rule
-          </h4>
-          <Button
-            onClick={() => setIsCreating(!isCreating)}
-            size="sm"
-            className="rounded-full transition-all duration-300 hover:scale-105 transform"
-          >
-            <Plus className="h-4 w-4" />
-            {isCreating ? 'Cancel' : 'New Rule'}
+    return (
+      <Card className={`p-4 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Icon className="h-4 w-4 text-green-500" />
+            <span className="font-medium">{actionType?.name}</span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onRemove}>
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
+        <div className="space-y-2 text-sm">
+          {renderActionConfig(action)}
+        </div>
+      </Card>
+    );
+  };
 
-        {isCreating && (
-          <div className="space-y-4 animate-fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="ruleName" className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                  Rule Name
-                </Label>
-                <Input
-                  id="ruleName"
-                  value={newRule.name}
-                  onChange={(e) => setNewRule(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Car Connect"
-                  className={`mt-1 transition-all duration-300 ${
-                    isDarkMode 
-                      ? 'bg-white/10 border-white/20 text-white placeholder:text-gray-400' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                />
-              </div>
-              <div>
-                <Label htmlFor="ruleDesc" className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                  Description
-                </Label>
-                <Input
-                  id="ruleDesc"
-                  value={newRule.description}
-                  onChange={(e) => setNewRule(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="What does this rule do?"
-                  className={`mt-1 transition-all duration-300 ${
-                    isDarkMode 
-                      ? 'bg-white/10 border-white/20 text-white placeholder:text-gray-400' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                />
-              </div>
-            </div>
+  const renderTriggerConfig = (trigger: Trigger) => {
+    switch (trigger.type) {
+      case 'time':
+        return (
+          <div>
+            <p>Time: {trigger.config.time}</p>
+            <p>Days: {trigger.config.days.join(', ')}</p>
+          </div>
+        );
+      case 'location':
+        return (
+          <div>
+            <p>Action: {trigger.config.entering ? 'Entering' : 'Leaving'}</p>
+            <p>Radius: {trigger.config.radius}m</p>
+          </div>
+        );
+      case 'device':
+        return (
+          <div>
+            <p>Device: {trigger.config.deviceName || 'Any device'}</p>
+            <p>Action: {trigger.config.action}</p>
+          </div>
+        );
+      case 'sensor':
+        return (
+          <div>
+            <p>Sensor: {trigger.config.sensorType}</p>
+            <p>Condition: {trigger.config.operator} {trigger.config.value}</p>
+          </div>
+        );
+      case 'voice':
+        return (
+          <div>
+            <p>Phrase: "{trigger.config.phrase}"</p>
+            <p>Match: {trigger.config.exact ? 'Exact' : 'Fuzzy'}</p>
+          </div>
+        );
+      default:
+        return <p>Configuration: {JSON.stringify(trigger.config)}</p>;
+    }
+  };
 
-            {/* Triggers */}
-            <div>
-              <Label className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                When (Triggers)
-              </Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2 justify-items-center">
-                {triggerTypes.map(trigger => (
-                  <CircularTriggerAction
-                    key={trigger.id}
-                    item={trigger}
-                    type="trigger"
-                    onClick={(id) => console.log('Add trigger:', id)}
-                  />
-                ))}
-              </div>
-            </div>
+  const renderActionConfig = (action: Action) => {
+    switch (action.type) {
+      case 'audio':
+        return (
+          <div>
+            <p>Action: {action.config.action}</p>
+            <p>Volume: {action.config.volume}%</p>
+          </div>
+        );
+      case 'notification':
+        return (
+          <div>
+            <p>Title: {action.config.title}</p>
+            <p>Message: {action.config.message}</p>
+          </div>
+        );
+      case 'voice':
+        return (
+          <div>
+            <p>Message: "{action.config.message}"</p>
+            <p>Voice: {action.config.voice}</p>
+          </div>
+        );
+      default:
+        return <p>Configuration: {JSON.stringify(action.config)}</p>;
+    }
+  };
 
-            {/* Actions */}
-            <div>
-              <Label className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                Then (Actions)
-              </Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2 justify-items-center">
-                {actionTypes.map(action => (
-                  <CircularTriggerAction
-                    key={action.id}
-                    item={action}
-                    type="action"
-                    onClick={(id) => console.log('Add action:', id)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <Button onClick={createAutomationRule} className="w-full transition-all duration-300 hover:scale-105 transform">
-              <Zap className="h-4 w-4 mr-2" />
-              Create Rule
+  if (isCreating) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            Create New Automation
+          </h3>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsCreating(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveRule}>
+              Save Rule
             </Button>
           </div>
-        )}
-      </Card>
+        </div>
 
-      {/* Existing Rules */}
-      <div className="space-y-3">
-        <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-          Your Automation Rules
-        </h4>
-        {automationRules.map(rule => (
-          <Card key={rule.id} className={`p-4 border transition-all duration-300 hover:scale-102 transform ${
-            isDarkMode 
-              ? 'bg-white/5 border-white/10 hover:bg-white/8' 
-              : 'bg-white/80 border-gray-200/50 hover:bg-white/90'
-          } backdrop-blur-md rounded-2xl shadow-lg`}>
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3">
-                  <h5 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {rule.name}
-                  </h5>
-                  <Badge variant={rule.enabled ? "default" : "secondary"} className="text-xs">
-                    {rule.enabled ? 'Active' : 'Inactive'}
-                  </Badge>
+        <Card className={`p-6 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'}`}>
+          <div className="space-y-4">
+            <div>
+              <Label>Rule Name</Label>
+              <Input
+                value={newRule.name || ''}
+                onChange={(e) => setNewRule(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter automation name"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={newRule.enabled || true}
+                onCheckedChange={(checked) => setNewRule(prev => ({ ...prev, enabled: checked }))}
+              />
+              <Label>Enable this automation</Label>
+            </div>
+          </div>
+        </Card>
+
+        {/* Triggers Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              Triggers
+            </h4>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              When should this automation run?
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {triggerTypes.map(trigger => (
+              <Button
+                key={trigger.id}
+                variant="outline"
+                className="h-auto p-4 flex flex-col items-center gap-2"
+                onClick={() => createTrigger(trigger.id)}
+              >
+                <trigger.icon className="h-5 w-5" />
+                <div className="text-center">
+                  <div className="font-medium">{trigger.name}</div>
+                  <div className="text-xs opacity-70">{trigger.description}</div>
                 </div>
-                {rule.description && (
-                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {rule.description}
-                  </p>
-                )}
-                <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Executed {rule.execution_count} times
-                </p>
-              </div>
+              </Button>
+            ))}
+          </div>
 
-              <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => toggleRule(rule.id, rule.enabled)}
-                  className="rounded-full transition-all duration-300 hover:scale-110 transform"
-                >
-                  {rule.enabled ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-full transition-all duration-300 hover:scale-110 transform"
-                >
+          {newRule.triggers && newRule.triggers.length > 0 && (
+            <div className="space-y-3">
+              <h5 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Added Triggers
+              </h5>
+              {newRule.triggers.map((trigger) => (
+                <TriggerCard
+                  key={trigger.id}
+                  trigger={trigger}
+                  onRemove={() => removeTrigger(trigger.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Actions Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              Actions
+            </h4>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              What should happen when triggered?
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {actionTypes.map(action => (
+              <Button
+                key={action.id}
+                variant="outline"
+                className="h-auto p-4 flex flex-col items-center gap-2"
+                onClick={() => createAction(action.id)}
+              >
+                <action.icon className="h-5 w-5" />
+                <div className="text-center">
+                  <div className="font-medium">{action.name}</div>
+                  <div className="text-xs opacity-70">{action.description}</div>
+                </div>
+              </Button>
+            ))}
+          </div>
+
+          {newRule.actions && newRule.actions.length > 0 && (
+            <div className="space-y-3">
+              <h5 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Added Actions
+              </h5>
+              {newRule.actions.map((action) => (
+                <ActionCard
+                  key={action.id}
+                  action={action}
+                  onRemove={() => removeAction(action.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          Automation Rules
+        </h3>
+        <Button onClick={() => setIsCreating(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Rule
+        </Button>
+      </div>
+
+      <div className="grid gap-4">
+        {automationRules.map(rule => (
+          <Card key={rule.id} className={`p-6 transition-all duration-300 hover:scale-[1.02] ${
+            isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200'
+          }`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${rule.enabled ? 'bg-green-500' : 'bg-gray-400'}`} />
+                <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {rule.name}
+                </h4>
+                <Badge variant={rule.enabled ? 'default' : 'secondary'}>
+                  {rule.enabled ? 'Active' : 'Disabled'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm">
                   <Settings className="h-4 w-4" />
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-full text-red-400 hover:text-red-300 transition-all duration-300 hover:scale-110 transform"
-                >
-                  <Trash2 className="h-4 w-4" />
+                <Button variant="ghost" size="sm">
+                  {rule.enabled ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </Button>
+              </div>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h5 className={`font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Triggers
+                </h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-blue-500" />
+                    <span>Every weekday at 8:00 AM</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h5 className={`font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Actions
+                </h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Volume2 className="h-4 w-4 text-green-500" />
+                    <span>Start morning playlist</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-gray-200/20">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Executed {rule.execution_count} times</span>
+                <span>Last run: 2 hours ago</span>
               </div>
             </div>
           </Card>
