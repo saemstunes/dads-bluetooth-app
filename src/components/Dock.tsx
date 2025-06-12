@@ -35,15 +35,15 @@ function DockItem({
   const mouseDistance = useTransform(mouseX, (val) => {
     const rect = ref.current?.getBoundingClientRect() ?? {
       x: 0,
-      width: baseItemSize,
+      width: Number(baseItemSize),
     };
-    return val - rect.x - baseItemSize / 2;
+    return val - rect.x - Number(baseItemSize) / 2;
   });
 
   const targetSize = useTransform(
     mouseDistance,
-    [-distance, 0, distance],
-    [baseItemSize, magnification, baseItemSize]
+    [-Number(distance), 0, Number(distance)],
+    [Number(baseItemSize), Number(magnification), Number(baseItemSize)]
   );
   
   // Smoother spring configuration to reduce jitter
