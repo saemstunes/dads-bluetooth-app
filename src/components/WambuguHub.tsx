@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,9 +40,9 @@ const WambuguHub = () => {
     queryKey: ['connected-devices'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('connected_devices')
+        .from('device_connections')
         .select('*')
-        .eq('status', 'connected');
+        .eq('is_trusted', true);
       
       if (error) throw error;
       return data || [];
@@ -55,7 +56,7 @@ const WambuguHub = () => {
       const { data, error } = await supabase
         .from('automation_rules')
         .select('*')
-        .eq('is_active', true);
+        .eq('enabled', true);
       
       if (error) throw error;
       return data || [];
@@ -83,15 +84,13 @@ const WambuguHub = () => {
     label, 
     active = false, 
     onClick, 
-    className = "",
-    view 
+    className = ""
   }: { 
     icon: any; 
     label: string; 
     active?: boolean; 
     onClick: () => void; 
     className?: string;
-    view?: ViewType;
   }) => (
     <div 
       className={`
@@ -166,7 +165,7 @@ const WambuguHub = () => {
       case 'automation':
         return (
           <div className="space-y-6">
-            <AutomationBuilder isDarkMode={isDarkMode} />
+            <AutomationBuilder isDarkMode={isDarkMode} automationRules={automationRules} />
           </div>
         );
       case 'settings':
@@ -180,7 +179,7 @@ const WambuguHub = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-6">
               <VoiceInterface isDarkMode={isDarkMode} />
-              <DeviceManager isDarkMode={isDarkMode} />
+              <DeviceManager isDarkMode={isDarkMode} connectedDevices={connectedDevices} />
             </div>
             <div className="space-y-6">
               <EnhancedAudioPlayer isDarkMode={isDarkMode} compact />
@@ -210,7 +209,7 @@ const WambuguHub = () => {
                           Bluetooth
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                          {connectedDevices.filter(d => d.type === 'bluetooth').length} devices
+                          {connectedDevices.filter(d => d.device_type === 'bluetooth').length} devices
                         </p>
                       </div>
                     </div>
