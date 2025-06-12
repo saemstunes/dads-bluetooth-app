@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,7 +93,7 @@ const WambuguHub = () => {
     }
   };
 
-  // Dock items with correct Lucide icons
+  // Simple dock items with correct Lucide icons
   const dockItems = [
     { 
       icon: <Home size={18} />, 
@@ -484,5 +485,3 @@ const WambuguHub = () => {
 };
 
 export default WambuguHub;
-
-}

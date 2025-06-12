@@ -45,7 +45,10 @@ function DockItem({
     [-distance, 0, distance],
     [baseItemSize, magnification, baseItemSize]
   );
-  const size = useSpring(targetSize, spring);
+  
+  // Smoother spring configuration to reduce jitter
+  const smoothSpring = { mass: 0.1, stiffness: 200, damping: 20 };
+  const size = useSpring(targetSize, smoothSpring);
 
   return (
     <motion.div
@@ -89,7 +92,7 @@ function DockLabel({ children, className = "", ...rest }: any) {
           initial={{ opacity: 0, y: 0 }}
           animate={{ opacity: 1, y: -10 }}
           exit={{ opacity: 0, y: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
           className={`dock-label ${className}`}
           role="tooltip"
           style={{ x: "-50%" }}
@@ -108,9 +111,9 @@ function DockIcon({ children, className = "" }: any) {
 export default function Dock({
   items,
   className = "",
-  spring = { mass: 0.1, stiffness: 150, damping: 12 },
+  spring = { mass: 0.1, stiffness: 180, damping: 18 },
   magnification = 70,
-  distance = 200,
+  distance = 150,
   panelHeight = 68,
   dockHeight = 256,
   baseItemSize = 50,
@@ -122,8 +125,11 @@ export default function Dock({
     () => Math.max(Number(dockHeight), Number(magnification) + Number(magnification) / 2 + 4),
     [magnification, dockHeight]
   );
+  
   const heightRow = useTransform(isHovered, [0, 1], [Number(panelHeight), maxHeight]);
-  const height = useSpring(heightRow, spring);
+  
+  // Smoother height animation
+  const height = useSpring(heightRow, { mass: 0.1, stiffness: 150, damping: 20 });
 
   return (
     <motion.div
