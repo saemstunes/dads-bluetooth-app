@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -32,12 +31,12 @@ function DockItem({
   const ref = useRef<HTMLDivElement>(null);
   const isHovered = useMotionValue(0);
 
-  const mouseDistance = useTransform(mouseX, (val) => {
+  const mouseDistance = useTransform(mouseX, (val: number) => {
     const rect = ref.current?.getBoundingClientRect() ?? {
       x: 0,
       width: Number(baseItemSize),
     };
-    return val - rect.x - Number(baseItemSize) / 2;
+    return Number(val) - rect.x - Number(baseItemSize) / 2;
   });
 
   const targetSize = useTransform(

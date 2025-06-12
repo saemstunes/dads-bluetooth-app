@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,9 +26,11 @@ import {
   Archive
 } from 'lucide-react';
 
+type ViewType = 'main' | 'automation' | 'settings' | 'audio';
+
 const WambuguHub = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [activeView, setActiveView] = useState<'main' | 'automation' | 'settings' | 'audio'>('main');
+  const [activeView, setActiveView] = useState<ViewType>('main');
   const [isCarMode, setIsCarMode] = useState(false);
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [automationRules, setAutomationRules] = useState([]);
