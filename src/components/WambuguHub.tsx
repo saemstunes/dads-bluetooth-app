@@ -6,12 +6,14 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Dock from './Dock';
-import VoiceInterface from './VoiceInterface';
+import JarvisVoiceAssistant from './JarvisVoiceAssistant';
 import EnhancedAudioPlayer from './EnhancedAudioPlayer';
 import DeviceManager from './DeviceManager';
 import AutomationBuilder from './AutomationBuilder';
 import Settings from './Settings';
 import StatusIndicators from './StatusIndicators';
+import BluetoothManager from '../utils/NativeBluetoothManager';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Mic, 
   Car, 
@@ -24,7 +26,8 @@ import {
   Bluetooth,
   Wifi,
   Volume2,
-  Archive
+  Archive,
+  Zap
 } from 'lucide-react';
 
 type ViewType = 'main' | 'automation' | 'settings' | 'audio';
@@ -35,10 +38,32 @@ const WambuguHub = () => {
   const [isCarMode, setIsCarMode] = useState(false);
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [automationRules, setAutomationRules] = useState([]);
+  const [bluetoothEnabled, setBluetoothEnabled] = useState(false);
+  const { toast } = useToast();
 
+  // Enhanced device queries with real Bluetooth integration
   const { data: devices = [] } = useQuery({
     queryKey: ['connected-devices'],
     queryFn: async () => {
+      try {
+        // Try to get real Bluetooth devices first
+        const bluetoothDevices = await BluetoothManager.getConnectedDevices();
+        if (bluetoothDevices.devices.length > 0) {
+          return bluetoothDevices.devices.map(device => ({
+            id: device.id,
+            device_name: device.name,
+            device_type: device.type,
+            is_trusted: device.paired,
+            signal_strength: device.signalStrength,
+            battery_level: device.battery,
+            last_connected_at: new Date().toISOString()
+          }));
+        }
+      } catch (error) {
+        console.log('Bluetooth not available, using database fallback');
+      }
+
+      // Fallback to database
       const { data, error } = await supabase
         .from('device_connections')
         .select('*')
@@ -71,12 +96,79 @@ const WambuguHub = () => {
     setAutomationRules(rules);
   }, [rules]);
 
+  // Initialize Bluetooth
+  useEffect(() => {
+    const initializeBluetooth = async () => {
+      try {
+        const status = await BluetoothManager.isBluetoothEnabled();
+        setBluetoothEnabled(status.enabled);
+
+        // Listen for Bluetooth events
+        BluetoothManager.addListener('deviceConnected', (event) => {
+          toast({
+            title: "Device Connected",
+            description: `${event.device.name} is now connected`,
+            className: `${isDarkMode ? 'bg-green-900/80 border-green-700 text-green-200' : 'bg-green-50 border-green-300 text-green-800'} backdrop-blur-md`
+          });
+        });
+
+        BluetoothManager.addListener('deviceDisconnected', (event) => {
+          toast({
+            title: "Device Disconnected",
+            description: `${event.device.name} has been disconnected`,
+            className: `${isDarkMode ? 'bg-yellow-900/80 border-yellow-700 text-yellow-200' : 'bg-yellow-50 border-yellow-300 text-yellow-800'} backdrop-blur-md`
+          });
+        });
+
+      } catch (error) {
+        console.error('Bluetooth initialization error:', error);
+      }
+    };
+
+    initializeBluetooth();
+  }, [isDarkMode, toast]);
+
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
   };
 
-  const toggleCarMode = () => {
+  const toggleCarMode = async () => {
     setIsCarMode(!isCarMode);
+    
+    if (!isCarMode) {
+      // Entering car mode - scan for car audio systems
+      try {
+        const scanResult = await BluetoothManager.scanForDevices({ timeout: 10000 });
+        const carDevices = scanResult.devices.filter(device => device.type === 'car');
+        
+        if (carDevices.length > 0) {
+          toast({
+            title: "Car Mode Activated",
+            description: `Found ${carDevices.length} car audio system(s) nearby`,
+            className: `${isDarkMode ? 'bg-blue-900/80 border-blue-700 text-blue-200' : 'bg-blue-50 border-blue-300 text-blue-800'} backdrop-blur-md`
+          });
+        }
+      } catch (error) {
+        console.error('Car mode scan error:', error);
+      }
+    }
+  };
+
+  const handleVoiceCommand = (command: string, response: string) => {
+    console.log('Voice command processed:', { command, response });
+    
+    // Handle specific commands that affect the UI
+    if (command.toLowerCase().includes('car mode')) {
+      toggleCarMode();
+    }
+    
+    if (command.toLowerCase().includes('settings')) {
+      setActiveView('settings');
+    }
+    
+    if (command.toLowerCase().includes('music') || command.toLowerCase().includes('audio')) {
+      setActiveView('audio');
+    }
   };
 
   const CircularButton = ({ 
@@ -178,7 +270,10 @@ const WambuguHub = () => {
         return (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-6">
-              <VoiceInterface isDarkMode={isDarkMode} />
+              <JarvisVoiceAssistant 
+                isDarkMode={isDarkMode} 
+                onCommand={handleVoiceCommand}
+              />
               <DeviceManager isDarkMode={isDarkMode} connectedDevices={connectedDevices} />
             </div>
             <div className="space-y-6">
@@ -191,25 +286,41 @@ const WambuguHub = () => {
               } backdrop-blur-md rounded-3xl shadow-2xl`}>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    System Status
+                    Enhanced System Status
                   </h3>
                   <StatusIndicators connectedDevices={connectedDevices} />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className={`p-4 rounded-xl border ${
-                    isDarkMode 
-                      ? 'bg-green-500/10 border-green-500/20' 
-                      : 'bg-green-50 border-green-200'
+                    bluetoothEnabled && connectedDevices.length > 0
+                      ? isDarkMode 
+                        ? 'bg-green-500/10 border-green-500/20' 
+                        : 'bg-green-50 border-green-200'
+                      : isDarkMode
+                        ? 'bg-gray-500/10 border-gray-500/20'
+                        : 'bg-gray-50 border-gray-200'
                   }`}>
                     <div className="flex items-center space-x-3">
-                      <Bluetooth className={`h-5 w-5 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
+                      <Bluetooth className={`h-5 w-5 ${
+                        bluetoothEnabled && connectedDevices.length > 0
+                          ? isDarkMode ? 'text-green-400' : 'text-green-600'
+                          : isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                      }`} />
                       <div>
-                        <p className={`font-semibold ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>
+                        <p className={`font-semibold ${
+                          bluetoothEnabled && connectedDevices.length > 0
+                            ? isDarkMode ? 'text-green-300' : 'text-green-700'
+                            : isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
                           Bluetooth
                         </p>
-                        <p className={`text-sm ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                          {connectedDevices.filter(d => d.device_type === 'bluetooth').length} devices
+                        <p className={`text-sm ${
+                          bluetoothEnabled && connectedDevices.length > 0
+                            ? isDarkMode ? 'text-green-400' : 'text-green-600'
+                            : isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          {connectedDevices.filter(d => d.device_type === 'bluetooth' || d.device_type === 'car').length} connected
                         </p>
                       </div>
                     </div>
@@ -221,18 +332,38 @@ const WambuguHub = () => {
                       : 'bg-blue-50 border-blue-200'
                   }`}>
                     <div className="flex items-center space-x-3">
-                      <Wifi className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                      <Zap className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                       <div>
                         <p className={`font-semibold ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-                          Network
+                          AI Assistant
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                          Connected
+                          Active & Learning
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {isCarMode && (
+                  <div className={`mt-4 p-4 rounded-xl border ${
+                    isDarkMode 
+                      ? 'bg-purple-500/10 border-purple-500/20' 
+                      : 'bg-purple-50 border-purple-200'
+                  }`}>
+                    <div className="flex items-center space-x-3">
+                      <Car className={`h-5 w-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+                      <div>
+                        <p className={`font-semibold ${isDarkMode ? 'text-purple-300' : 'text-purple-700'}`}>
+                          Car Mode Active
+                        </p>
+                        <p className={`text-sm ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                          Optimized for driving
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </Card>
             </div>
           </div>
@@ -257,7 +388,7 @@ const WambuguHub = () => {
                 WAMBUGU Hub
               </h1>
               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {isCarMode ? 'Car Mode Active' : 'Voice-Controlled Smart Hub'}
+                {isCarMode ? 'Car Mode Active - Voice Assistant Ready' : 'AI-Powered Smart Hub with JARVIS Integration'}
               </p>
             </div>
           </div>
